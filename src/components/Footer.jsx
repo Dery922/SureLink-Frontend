@@ -6,10 +6,10 @@ function Footer() {
             <div className="max-w-[1280px] mx-auto px-5">
 
                 {/* Top section */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-10 pb-10 border-b border-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 pb-10 border-b border-gray-700">
 
                     {/* Brand */}
-                    <div className="col-span-1 md:col-span-2">
+                    <div className="col-span-1 sm:col-span-2 lg:col-span-2">
                         <h2 className="text-[#0057FF] font-bold text-xl mb-3">SureLink</h2>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-[280px]">
                             Connecting Ghana, one service at a time. Find trusted local providers instantly.
@@ -36,7 +36,7 @@ function Footer() {
                         <ul className="flex flex-col gap-3">
                             <li><Link to="/about" className="text-gray-400 text-sm hover:text-white transition-colors">About us</Link></li>
                             <li><Link to="/careers" className="text-gray-400 text-sm hover:text-white transition-colors">Careers</Link></li>
-                            
+                            <li><Link to="/blog" className="text-gray-400 text-sm hover:text-white transition-colors">Blog</Link></li>
                         </ul>
                     </div>
 
