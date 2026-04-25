@@ -4,6 +4,7 @@ import SubNavbar from './SubNavbar'
 
 function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false)
+    const [isSearchFocused, setIsSearchFocused] = useState(false)
 
     return (
         <nav className="w-full bg-white border-b border-gray-100 fixed top-0 left-0 z-50 ">
@@ -15,10 +16,18 @@ function Navbar() {
                 </Link>
 
                 {/* Search bar — hidden on mobile */}
-                <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 w-[400px] lg:w-[480px]">
+                    <div
+                    className={`hidden md:flex items-center border rounded-full px-4 py-2 w-[400px] lg:w-[480px] transition-all relative ${
+                    isSearchFocused
+                    ? 'bg-white border-[#0057FF] shadow-lg z-50'
+                    : 'bg-gray-50 border-gray-200 z-50'
+                    }`}
+                    >
                     <i className="fa-solid fa-magnifying-glass text-gray-400 text-sm mr-3"></i>
                     <input
                         type="text"
+                          onFocus={() => setIsSearchFocused(true)}
+                         onBlur={() => setTimeout(() => setIsSearchFocused(false), 150)}
                         placeholder="What service do you need?"
                         className="bg-transparent outline-none text-sm text-gray-500 w-full"
                     />
@@ -73,7 +82,14 @@ function Navbar() {
                 </div>
                 
             )}
+ 
             <SubNavbar />
+                       {isSearchFocused && (
+  <div
+    className="fixed inset-0 bg-black/40 z-40"
+    onClick={() => setIsSearchFocused(false)}
+  />
+)}
         </nav>
     )
 }
