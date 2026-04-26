@@ -75,6 +75,9 @@ const steps = [
 ]
 
 function Home() {
+        const handleProviderClick = (providerId) => {
+        window.location.href = `/provider/${providerId}`
+    }
     return (
         <div className="bg-white min-h-screen">
             <Navbar />
@@ -137,6 +140,7 @@ function Home() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {providers.map((provider) => (
                             <div
+                              onClick={() => handleProviderClick(provider.id)}
                                 key={provider.id}
                                 className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow"
                             >
