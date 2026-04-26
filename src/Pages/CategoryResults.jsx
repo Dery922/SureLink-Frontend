@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 
@@ -28,7 +28,7 @@ const allProviders = [
         price: 100,
         displayPrice: 'From GH₵ 100',
         cover: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80',
-        avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&q=80',
+        avatar: 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=200&q=80',
     },
     {
         id: 3,
@@ -41,7 +41,7 @@ const allProviders = [
         price: 200,
         displayPrice: 'From GH₵ 200',
         cover: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&q=80',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',
+        avatar: 'https://images.unsplash.com/photo-1607346256330-dee7af15f7c5?w=200&q=80',
     },
     {
         id: 4,
@@ -162,8 +162,8 @@ function CategoryResults() {
                                 key={filter.value}
                                 onClick={() => setActiveFilter(filter.value)}
                                 className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-all ${activeFilter === filter.value
-                                        ? 'bg-[#0057FF] text-white border-[#0057FF]'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#0057FF] hover:text-[#0057FF]'
+                                    ? 'bg-[#0057FF] text-white border-[#0057FF]'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#0057FF] hover:text-[#0057FF]'
                                     }`}
                             >
                                 {filter.label}
@@ -176,59 +176,65 @@ function CategoryResults() {
                 <div className="max-w-[1280px] mx-auto px-5 py-8 md:py-10">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {sortedProviders.map((provider) => (
-                            <div
+                            <Link
+                                to={`/provider/${provider.id}`}
                                 key={provider.id}
-                                className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                                className="block"
                             >
-                                {/* Cover photo */}
-                                <div className="relative h-[180px]">
-                                    <img
-                                        src={provider.cover}
-                                        alt={provider.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-black opacity-20"></div>
-                                </div>
-
-                                {/* Card body */}
-                                <div className="p-4 pt-6 relative">
-                                    {/* Avatar */}
-                                    <img
-                                        src={provider.avatar}
-                                        alt={provider.name}
-                                        className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4"
-                                    />
-
-                                    {/* Name and service */}
-                                    <h3 className="font-bold text-[15px] text-[#1A1A1A] mt-2">{provider.name}</h3>
-                                    <p className="text-sm text-gray-500 mb-1">{provider.service}</p>
-
-                                    {/* Price */}
-                                    <p className="text-sm font-bold text-[#0057FF] mb-2">{provider.displayPrice}</p>
-
-                                    {/* Rating */}
-                                    <div className="flex items-center gap-1 mb-1">
-                                        {[...Array(5)].map((_, i) => (
-                                            <i
-                                                key={i}
-                                                className={`fa-solid fa-star text-xs ${i < Math.floor(provider.rating) ? 'text-[#FF6B00]' : 'text-gray-200'}`}
-                                            ></i>
-                                        ))}
-                                        <span className="text-xs text-gray-400 ml-1">({provider.reviews} reviews)</span>
+                                <div className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                                    {/* Cover photo */}
+                                    <div className="relative h-[180px]">
+                                        <img
+                                            src={provider.cover}
+                                            alt={provider.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-black opacity-20"></div>
                                     </div>
 
-                                    {/* Location */}
-                                    <div className="flex items-center gap-1 mb-4">
-                                        <i className="fa-solid fa-location-dot text-xs text-gray-400"></i>
-                                        <span className="text-xs text-gray-400">{provider.location}</span>
-                                    </div>
+                                    {/* Card body */}
+                                    <div className="p-4 pt-6 relative">
+                                        {/* Avatar */}
+                                        <img
+                                            src={provider.avatar}
+                                            alt={provider.name}
+                                            className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4"
+                                        />
 
-                                    {/* Book Now button */}
-                                    <button className="w-full bg-[#0057FF] text-white font-bold text-sm py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
-                                        Book Now
-                                    </button>
+                                        {/* Name and service */}
+                                        <h3 className="font-bold text-[15px] text-[#1A1A1A] mt-2">{provider.name}</h3>
+                                        <p className="text-sm text-gray-500 mb-1">{provider.service}</p>
+
+                                        {/* Price */}
+                                        <p className="text-sm font-bold text-[#0057FF] mb-2">{provider.displayPrice}</p>
+
+                                        {/* Rating */}
+                                        <div className="flex items-center gap-1 mb-1">
+                                            {[...Array(5)].map((_, i) => (
+                                                <i
+                                                    key={i}
+                                                    className={`fa-solid fa-star text-xs ${i < Math.floor(provider.rating) ? 'text-[#FF6B00]' : 'text-gray-200'}`}
+                                                ></i>
+                                            ))}
+                                            <span className="text-xs text-gray-400 ml-1">({provider.reviews} reviews)</span>
+                                        </div>
+
+                                        {/* Location */}
+                                        <div className="flex items-center gap-1 mb-4">
+                                            <i className="fa-solid fa-location-dot text-xs text-gray-400"></i>
+                                            <span className="text-xs text-gray-400">{provider.location}</span>
+                                        </div>
+
+                                        {/* Book Now button */}
+                                        <button
+                                            onClick={(e) => e.preventDefault()}
+                                            className="w-full bg-[#0057FF] text-white font-bold text-sm py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            Book Now
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
 
@@ -241,8 +247,8 @@ function CategoryResults() {
                             <button
                                 key={page}
                                 className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${page === 1
-                                        ? 'bg-[#0057FF] text-white'
-                                        : 'border border-gray-200 text-gray-500 hover:border-[#0057FF] hover:text-[#0057FF]'
+                                    ? 'bg-[#0057FF] text-white'
+                                    : 'border border-gray-200 text-gray-500 hover:border-[#0057FF] hover:text-[#0057FF]'
                                     }`}
                             >
                                 {page}
