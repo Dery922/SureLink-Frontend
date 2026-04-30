@@ -14,7 +14,7 @@ const About = () => {
         {
             title: 'Trust & Safety',
             description: 'We rigorously verify every provider to ensure you get the safest experience possible.',
-            icon: 'fa-shield-check'
+            icon: 'fa-shield-halved'
         },
         {
             title: 'Community First',
