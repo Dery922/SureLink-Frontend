@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { FaShoppingCart } from "react-icons/fa";
+import {IoIosContact} from 'react-icons/io'
 
 function Footer() {
     return (
@@ -68,6 +70,17 @@ function Footer() {
                     <p className="text-gray-500 text-xs">SureLink</p>
                 </div>
             </div>
+
+            <aside>
+            <Link
+                target="_blank"
+                to="/contact"
+                className="fixed right-0 bottom-[375px] z-10 bg-blue-700 text-white py-2.5 px-3.5 flex items-center w-[50px] h-10 overflow-hidden transition-all duration-200 ease whitespace-nowrap no-underline box-border rounded-l-2xl hover:w-[180px]"
+            >
+                <IoIosContact size={35} style={{ minWidth: '45px' }} />
+                Contact Support
+            </Link>
+            </aside>
         </footer>
     )
 }

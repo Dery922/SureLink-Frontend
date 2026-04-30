@@ -8,6 +8,7 @@ import {
   OtpInputGroup,
   RoleCard,
 } from "../components/auth/AuthComponents";
+import api from "../APIs/api";
 
 // ===================== CONSTANTS =====================
 const STEPS = {
@@ -156,16 +157,12 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [form, setForm] = useState({
-    identifier: "",
-    password: "",
-    fullName: "",
-    confirmPassword: "",
-    otp: "",
-    role: "consumer",
-    termsAccepted: false,
-    marketingOptIn: false,
-  });
+    const [form, setForm] = useState({
+      identifier: "", // phone or email
+      fullName: "",   // required for signup
+      otp: "",
+      role: "customer",
+    });
 
   // ===================== EFFECTS =====================
   useEffect(() => {
@@ -249,20 +246,55 @@ const Auth = () => {
     setStep(newStep);
   };
 
-  // ===================== SUBMIT HANDLERS =====================
-  const submitSignIn = async (e) => {
-    e?.preventDefault();
-    const identifierError = validateIdentifier(form.identifier);
-    const errors = { identifier: identifierError, password: form.password ? "" : "Password is required." };
-    setFieldErrors(errors);
-    if (errors.identifier || errors.password || !handleNetworkGuard()) return;
-    setLoading(true); setSlowNetwork(false); setGlobalError("");
-    const slowTimer = window.setTimeout(() => setSlowNetwork(true), 1200);
-    try { await simulateRequest(); goToLandingByRole(form.role); }
-    catch { setGlobalError(mapErrorToMicrocopy("AUTH_LOGIN_FAILED")); }
-    finally { window.clearTimeout(slowTimer); setLoading(false); setSlowNetwork(false); }
-  };
 
+const submitSignIn = async (e) => {
+
+    
+  e?.preventDefault();
+  
+  const identifierError = validateIdentifier(form.identifier);
+
+  setFieldErrors({ identifier: identifierError });
+
+  if (identifierError || !handleNetworkGuard()) return;
+
+
+  try {
+    setLoading(true);
+
+    // 1. Check if user exists
+    const res = await api.post("/auth/check-identifier", {
+      identifier: form.identifier,
+    });
+    
+
+    const { exists } = res.data;
+    console.log("check if user exist ", exists)
+
+    // 2. Branch logic
+    if (exists) {
+      // existing user → OTP login
+      await requestOtp(STEPS.OTP_SIGN_IN, form.identifier);
+      setStep("otp");
+    } else {
+      // new user → create account OR switch flow
+      await api.post("/auth/create-temp-user", {
+        identifier: form.identifier,
+      });
+
+      await requestOtp(STEPS.OTP_SIGN_UP, form.identifier);
+      setStep("otp"); // or "profile" depending on your design
+    }
+
+  } catch (err) {
+    setFieldErrors({
+      general: "Something went wrong. Please try again.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+ 
   const requestOtp = async (targetStep) => {
     const identifierError = validateIdentifier(form.identifier);
     setFieldErrors({ identifier: identifierError });
@@ -273,6 +305,37 @@ const Auth = () => {
     catch { setGlobalError("Could not send OTP. Try again."); }
     finally { window.clearTimeout(slowTimer); setLoading(false); setSlowNetwork(false); }
   };
+
+
+
+// const verifyOtp = async () => {
+//   if (form.otp.length !== 6) {
+//     setFieldErrors({ otp: "OTP must be 6 digits" });
+//     return;
+//   }
+
+//   setLoading(true);
+//   setGlobalError("");
+
+//   try {
+//     const res = await api.post("/auth/verify-otp", {
+//       email: form.identifier,
+//       otp: form.otp,
+//     });
+
+//     console.log("LOGIN SUCCESS:", res.data);
+
+//     // 🔥 store user in Redux later
+//     dispatch(loginSuccess(res.data.data))
+
+//     navigate("/"); // go home
+
+//   } catch (err) {
+//     setGlobalError("Invalid or expired OTP");
+//   } finally {
+//     setLoading(false);
+//   }
+// };
 
   const verifyOtpAndContinue = async (nextStep) => {
     const otpError = form.otp.length === 6 ? "" : "OTP must be 6 digits.";
@@ -294,10 +357,8 @@ const Auth = () => {
     e?.preventDefault();
     const identifierError = validateIdentifier(form.identifier);
     const errors = {
-      fullName: form.fullName.trim() ? "" : "Full name is required.",
       identifier: identifierError,
-      password: form.password.length >= 8 ? "" : "At least 8 characters required.",
-      confirmPassword: form.password === form.confirmPassword ? "" : "Passwords don't match.",
+
     };
     setFieldErrors(errors);
     if (Object.values(errors).some(Boolean) || !handleNetworkGuard()) return;
@@ -495,7 +556,7 @@ const Auth = () => {
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
                 </div>
 
-                <AuthButton onClick={() => changeStep(STEPS.SIGN_IN)}>Sign in with email</AuthButton>
+                <AuthButton onClick={() => changeStep(STEPS.SIGN_IN)}>Sign in with email or phone</AuthButton>
                 <AuthButton variant="secondary" onClick={() => changeStep(STEPS.REGISTER_BASICS)}>Create account</AuthButton>
                 <div className="text-center">
                   <p className="text-xs text-gray-400">By continuing, you agree to our <button className="text-brand-500 hover:underline font-medium">Terms</button> and <button className="text-brand-500 hover:underline font-medium">Privacy Policy</button>.</p>
@@ -533,10 +594,11 @@ const Auth = () => {
                 <form onSubmit={submitSignIn} className="space-y-4">
                   {/* Email */}
                   <div>
-                    <label htmlFor="signin-id" className="block text-sm font-semibold mb-1.5">Email or phone</label>
+                    <label htmlFor="signin-id" className="block text-sm font-semibold mb-1.5"> Phone Or Email</label>
                     <div className={inputWrap}>
-                      <Icon name="mail" size={16} className={iconBase} />
-                      <input id="signin-id" type="text" placeholder="you@example.com" value={form.identifier} disabled={loading}
+                      <Icon name="" size={16} className={iconBase} />
+                      <Icon name="globe" size={16} className={iconBase} />
+                      <input id="signin-id" type="text" placeholder="you@examble.com" value={form.identifier} disabled={loading}
                         onChange={(e) => updateField("identifier", e.target.value)}
                         className={`${inputBase} ${fieldErrors.identifier ? inputErr : inputOk}`} />
                     </div>
@@ -545,20 +607,7 @@ const Auth = () => {
 
                   {/* Password */}
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label htmlFor="signin-pw" className="text-sm font-semibold">Password</label>
-                      <button type="button" className="text-xs text-brand-500 hover:underline font-semibold">Forgot?</button>
-                    </div>
-                    <div className={inputWrap}>
-                      <Icon name="lock" size={16} className={iconBase} />
-                      <input id="signin-pw" type={showPassword ? "text" : "password"} placeholder="Enter password" value={form.password} disabled={loading}
-                        onChange={(e) => updateField("password", e.target.value)}
-                        className={`${inputBase} !pr-11 ${fieldErrors.password ? inputErr : inputOk}`} />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-                        <Icon name={showPassword ? "eye-off" : "eye"} size={16} />
-                      </button>
-                    </div>
-                    {fieldErrors.password && <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.password}</p>}
+
                   </div>
 
                   <AuthButton type="submit" loading={loading} disabled={loading}>
@@ -568,7 +617,7 @@ const Auth = () => {
 
                 <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center justify-center gap-1">
                   <button type="button" className="text-brand-500 hover:underline font-medium" onClick={() => requestOtp(STEPS.OTP_SIGN_IN)}>
-                    Use OTP instead
+                    Continue
                   </button>
                   <span>·</span>
                   <span>Don't have an account?</span>
@@ -635,7 +684,7 @@ const Auth = () => {
 
                 <form onSubmit={submitRegisterBasics} className="space-y-4">
                   {/* Full name */}
-                  <div>
+                  {/* <div>
                     <label htmlFor="reg-name" className="block text-sm font-semibold mb-1.5">Full name</label>
                     <div className={inputWrap}>
                       <Icon name="user" size={16} className={iconBase} />
@@ -644,7 +693,7 @@ const Auth = () => {
                         className={`${inputBase} ${fieldErrors.fullName ? inputErr : inputOk}`} />
                     </div>
                     {fieldErrors.fullName && <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.fullName}</p>}
-                  </div>
+                  </div> */}
 
                   {/* Email/Phone */}
                   <div>
@@ -659,7 +708,7 @@ const Auth = () => {
                   </div>
 
                   {/* Password */}
-                  <div>
+                  {/* <div>
                     <label htmlFor="reg-pw" className="block text-sm font-semibold mb-1.5">Password</label>
                     <div className={inputWrap}>
                       <Icon name="lock" size={16} className={iconBase} />
@@ -672,10 +721,10 @@ const Auth = () => {
                     </div>
                     <PasswordStrength password={form.password} />
                     {fieldErrors.password && <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.password}</p>}
-                  </div>
+                  </div> */}
 
                   {/* Confirm password */}
-                  <div>
+                  {/* <div>
                     <label htmlFor="reg-cpw" className="block text-sm font-semibold mb-1.5">Confirm password</label>
                     <div className={inputWrap}>
                       <Icon name="lock" size={16} className={iconBase} />
@@ -687,7 +736,7 @@ const Auth = () => {
                       </button>
                     </div>
                     {fieldErrors.confirmPassword && <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.confirmPassword}</p>}
-                  </div>
+                  </div> */}
 
                   <AuthButton type="submit" loading={loading} disabled={loading}>
                     Create account

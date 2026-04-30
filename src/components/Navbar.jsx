@@ -1,10 +1,36 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import SubNavbar from './SubNavbar'
+import { useDispatch } from 'react-redux'
+import { logoutUser,loginSuccess } from '../APIs/mockAuthApi'
+import { useSelector } from "react-redux";
+
+
+import api from '../APIs/api'
+ 
 
 function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false)
     const [isSearchFocused, setIsSearchFocused] = useState(false)
+
+    const user = useSelector((state) => state.auth.user);
+    const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
+ const dispatch = useDispatch();
+
+  const mockUser = {
+    name: "Gideon Franklin",
+};
+const isLoggedIn = false; // later this will come from Redux
+
+    const handleLogout = async () => {
+  try {
+    await api.post("/auth/logout");
+    dispatch(logoutUser());
+  } catch (err) {
+    console.error("Logout failed", err);
+  }
+};
 
     return (
         <nav className="w-full bg-white border-b border-gray-100 fixed top-0 left-0 z-50 ">
@@ -12,8 +38,14 @@ function Navbar() {
 
                 {/* Logo */}
                 <Link to="/" className="text-[#0057FF] font-bold text-xl tracking-tight shrink-0">
-                    SureLink
-                </Link>
+                            
+                 <img
+                    src="/Logo.png"
+                    alt="SureLink logo"
+                    className="h-20 w-auto ml-4 object-contain"
+                    loading="eager"
+                    />
+                 </Link>
 
                 {/* Search bar — hidden on mobile */}
                     <div
@@ -35,7 +67,7 @@ function Navbar() {
                 </div>
 
                 {/* Right side — hidden on mobile */}
-                <div className="hidden md:flex items-center gap-4 lg:gap-6 shrink-0">
+                {/* <div className="hidden md:flex items-center gap-4 lg:gap-6 shrink-0">
                     <Link to="/become-provider" className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors whitespace-nowrap">
                         Become a Provider
                     </Link>
@@ -48,7 +80,48 @@ function Navbar() {
                     >
                         Get Started
                     </Link>
-                </div>
+                </div> */}
+
+                <div className="hidden md:flex items-center gap-4 lg:gap-6 shrink-0">
+
+  <Link
+    to="/become-provider"
+    className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors whitespace-nowrap"
+  >
+    Become a Provider
+  </Link>
+  
+
+  {isLoggedIn ? (
+    <div className="flex items-center gap-3">
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-[#0057FF] text-white flex items-center justify-center font-semibold">
+            {mockUser.name.charAt(0)}
+        </div>
+
+        {/* Name */}
+        <span className="text-sm font-semibold text-gray-800">
+            {mockUser.name}
+        </span>
+    </div>
+) : (
+    <>
+        <Link
+            to="/signin"
+            className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors"
+        >
+            Sign in
+        </Link>
+
+        <Link
+            to="/get-started"
+            className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+        >
+            Get Started
+        </Link>
+    </>
+)}
+</div>
 
                 {/* Burger menu — mobile only */}
                 <button
@@ -71,20 +144,44 @@ function Navbar() {
                         />
                     </div>
                     <Link to="/become-provider" className="text-sm text-gray-700">Become a Provider</Link>
-                    <Link to="/signin" className="text-sm text-gray-700">Sign in</Link>
+                    {/* <Link to="/signin" className="text-sm text-gray-700">Sign in</Link>
                     <Link
                         to="/get-started"
                         className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
                     >
                         Get Started
-                    </Link>
+                    </Link> */}
+
+                     {!isAuthenticated ? (
+                        <>
+                            <Link to="/signin" className="text-sm text-gray-700">Sign in</Link>
+                            <Link
+                            to="/get-started"
+                            className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
+                            >
+                            Get Started
+                            </Link>
+                        </>
+                        ) : (
+                        <>
+                            <span className="text-sm font-semibold text-gray-800">
+                            Hi, {user?.fullName?.split(" ")[0] || "User"}
+                            </span>
+                            <button
+                            onClick={handleLogout}
+                            className="text-sm text-red-500 font-medium text-left"
+                            >
+                            Logout
+                            </button>
+                        </>
+                        )}
 
                 </div>
                 
             )}
  
-            <SubNavbar />
-                       {isSearchFocused && (
+   <SubNavbar />
+        {isSearchFocused && (
   <div
     className="fixed inset-0 bg-black/40 z-40"
     onClick={() => setIsSearchFocused(false)}

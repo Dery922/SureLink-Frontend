@@ -9,6 +9,9 @@ import ProviderOnboardingStep2Verification from './Pages/ProviderOnboardingStep2
 import ProviderOnboardingStep3Review from './Pages/ProviderOnboardingStep3Review';
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import ProviderProfile from './Pages/ProviderProfile';
+import About from './Pages/About';
+import Contact from './Pages/Contact';
+
 
 function App() {
   return (
@@ -24,6 +27,9 @@ function App() {
         <Route path="/category/:id" element={<Categories />} />
         <Route path="/category-results" element={<CategoryResults />} />
         <Route path="/provider/onboarding" element={<ProviderOnboardingGate />} />
+
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         
         
         <Route path="/provider-onboarding/profile" element={<ProviderOnboardingStep1Profile />} />
