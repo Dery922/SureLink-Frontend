@@ -11,8 +11,8 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 import ProviderProfile from './Pages/ProviderProfile';
 import About from './Pages/About';
 import Contact from './Pages/Contact';
-
-
+import BookingConfirmation from './Pages/BookingConfirmation';
+import BookingFlow from './Pages/BookingFlow';
 function App() {
   return (
     <div className="App">
@@ -31,9 +31,10 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         
-        
+        <Route path="/booking/:providerId" element={<BookingFlow/>} />
         <Route path="/provider-onboarding/profile" element={<ProviderOnboardingStep1Profile />} />
         <Route path="/provider-onboarding/verification" element={<ProviderOnboardingStep2Verification />} />
+        <Route path='/booking-confirmation/:proverId' element={<BookingConfirmation />} />
         <Route path="/provider-onboarding/review" element={<ProviderOnboardingStep3Review />} />
       </Routes>
     </div>
