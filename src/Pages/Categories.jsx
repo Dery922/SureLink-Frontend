@@ -148,7 +148,7 @@ function CategoryResults() {
 
                 {/* Page header */}
                 <div className="bg-[#F5F8FF] py-8 md:py-10">
-                    <div className="max-w-[1280px] mx-auto px-5">
+                    <div className="max-w-[1280px] mx-auto p-10 px-5">
                         <h1 className="text-2xl md:text-3xl font-bold text-[#1A1A1A] mb-1">{categoryName} Services</h1>
                         <p className="text-sm text-gray-500">{sortedProviders.length} providers found</p>
                     </div>
