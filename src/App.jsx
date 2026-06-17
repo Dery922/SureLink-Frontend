@@ -7,6 +7,7 @@ import ProviderOnboardingGate from './Pages/ProviderOnboardingGate';
 import ProviderOnboardingStep1Profile from './Pages/ProviderOnboardingStep1Profile';
 import ProviderOnboardingStep2Verification from './Pages/ProviderOnboardingStep2Verification';
 import ProviderOnboardingStep3Review from './Pages/ProviderOnboardingStep3Review';
+import CustomerOnboarding from './Pages/CustomerOnboardingGate';
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import ProviderProfile from './Pages/ProviderProfile';
 import About from './Pages/About';
@@ -27,6 +28,8 @@ function App() {
         <Route path="/category/:id" element={<Categories />} />
         <Route path="/category-results" element={<CategoryResults />} />
         <Route path="/provider/onboarding" element={<ProviderOnboardingGate />} />
+
+        <Route path="/customer/onboarding" element={<CustomerOnboarding />} />
 
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
