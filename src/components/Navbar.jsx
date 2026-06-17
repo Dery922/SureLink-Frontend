@@ -30,6 +30,11 @@ function Navbar() {
                     <Link to="/become-provider" className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors whitespace-nowrap">
                         Become a Provider
                     </Link>
+
+                    <Link to="/customer/onboarding" className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors whitespace-nowrap">
+                        Become a Customer
+                    </Link>
+
                     <Link to="/signin" className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors">
                         Sign in
                     </Link>
@@ -62,6 +67,7 @@ function Navbar() {
                         />
                     </div>
                     <Link to="/become-provider" className="text-sm text-gray-700">Become a Provider</Link>
+                    <Link to="/customer/onboarding" className="text-sm text-gray-700">Become a Customer</Link>
                     <Link to="/signin" className="text-sm text-gray-700">Sign in</Link>
                     <Link
                         to="/get-started"
