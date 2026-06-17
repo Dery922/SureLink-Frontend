@@ -36,10 +36,10 @@ function BookingConfirmation() {
     const provider = providers.find(p => p.id === parseInt(providerId)) || providers[0]
 
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-white min-h-screen ">
             <Navbar />
 
-            <div className="pt-[72px] bg-[#F5F8FF] min-h-screen flex flex-col items-center justify-center px-5">
+            <div className="pt-[102px] bg-[#F5F8FF] min-h-screen flex flex-col items-center justify-center px-5">
                 <div className="max-w-[600px] w-full text-center">
 
                     {/* Success icon */}

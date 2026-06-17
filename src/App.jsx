@@ -4,6 +4,7 @@ import CategoryResults from './pages/CategoryResults'
 import ProviderProfile from './pages/ProviderProfile'
 import BookingFlow from './Pages/BookingFlow'
 import BookingConfirmation from './pages/BookingConfirmation'
+import ProviderDashboard from './pages/ProviderDashboard'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Route path="/provider/:id" element={<ProviderProfile />} />
       <Route path="/booking/:providerId" element={<BookingFlow />} />
       <Route path="/booking-confirmation/:providerId" element={<BookingConfirmation />} />
+      <Route path="/provider/dashboard" element={<ProviderDashboard />} />
     </Routes>
   )
 }

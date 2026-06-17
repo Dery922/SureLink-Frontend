@@ -141,10 +141,10 @@ function CategoryResults() {
         : 'All'
 
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-white min-h-screen ">
             <Navbar />
 
-            <div className="pt-[72px]">
+            <div className="pt-[102px]">
 
                 {/* Page header */}
                 <div className="bg-[#F5F8FF] py-8 md:py-10">
