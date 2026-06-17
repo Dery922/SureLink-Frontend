@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   user: null,
   isAuthenticated: false,
-  loading: false,
+  loading: true, // 🔑 Start as true so the app can check localStorage before rendering forms
 };
 
 const authSlice = createSlice({
@@ -20,10 +20,17 @@ const authSlice = createSlice({
     },
     loginFailure: (state) => {
       state.loading = false;
+      state.isAuthenticated = false;
+      state.user = null;
     },
     logoutUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
+      state.loading = false;
+    },
+    // 🔑 Add this to stop the initial splash screen loading state
+    setInitializingFalse: (state) => {
+      state.loading = false;
     },
   },
 });
@@ -33,6 +40,7 @@ export const {
   loginSuccess,
   loginFailure,
   logoutUser,
+  setInitializingFalse,
 } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { Link, Router, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  Router,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   AuthButton,
   AuthIcon,
@@ -9,17 +15,29 @@ import {
   RoleCard,
 } from "../components/auth/AuthComponents";
 import api from "../APIs/api";
+import ProviderOnboarding from "./ProviderOnboardingGate";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  loginSuccess,
+  loginFailure,
+  loginStart,
+  setInitializingFalse,
+} from "../redux/features/auth/authSlice";
 
 // ===================== CONSTANTS =====================
 const STEPS = {
   WELCOME: "welcome",
-  SIGN_IN: "signIn",
-  OTP_SIGN_IN: "otpSignIn",
-  REGISTER_BASICS: "registerBasics",
-  OTP_SIGNUP: "otpSignup",
-  ROLE_SELECTION: "roleSelection",
-  CONSENT: "consent",
-  ACCOUNT_CREATED: "accountCreated",
+  SIGN_IN: "sign_in",
+  REGISTER_BASICS: "register_basics",
+  OTP_SIGN_IN: "otp_sign_in",
+  OTP_SIGNUP: "otp_signup",
+  ROLE_SELECTION: "role_selection",
+
+  // 🔑 PLACE IT HERE: After role selection, before terms consent!
+  PROVIDER_PROFILE: "provider_profile",
+
+  TERMS_CONSENT: "terms_consent",
+  ACCOUNT_CREATED: "account_created",
 };
 
 const OTP_RESEND_SECONDS = 30;
@@ -29,52 +47,288 @@ const DARK_KEY = "surelink_dark";
 const Icon = ({ name, className = "", size = 16 }) => {
   const icons = {
     moon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </svg>
     ),
     sun: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      </svg>
     ),
     user: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
     ),
     briefcase: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
     ),
     "check-circle": (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
     ),
     "arrow-right": (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </svg>
     ),
     eye: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
     ),
     "eye-off": (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+        <line x1="2" y1="2" x2="22" y2="22" />
+      </svg>
     ),
     mail: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <rect width="20" height="16" x="2" y="4" rx="2" />
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+      </svg>
     ),
     lock: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
     ),
     "shield-check": (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
     ),
     star: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1"
+        className={className}
+      >
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
     ),
     zap: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
     ),
     users: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
     ),
     globe: (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
     ),
     "wifi-off": (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <line x1="1" y1="1" x2="23" y2="23" />
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+        <path d="M10.71 5.05A16 16 0 0 1 22.56 9" />
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+        <line x1="12" y1="20" x2="12.01" y2="20" />
+      </svg>
     ),
   };
   return icons[name] || null;
@@ -90,7 +344,12 @@ function PasswordStrength({ password }) {
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
   const labels = ["Weak", "Fair", "Good", "Strong"];
-  const colors = ["bg-red-500", "bg-amber-500", "bg-brand-500", "bg-emerald-500"];
+  const colors = [
+    "bg-red-500",
+    "bg-amber-500",
+    "bg-brand-500",
+    "bg-emerald-500",
+  ];
   const label = labels[score - 1] || "Too short";
   const color = colors[score - 1] || "bg-gray-300";
 
@@ -98,10 +357,15 @@ function PasswordStrength({ password }) {
     <div className="mt-2">
       <div className="flex gap-1 mb-1">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i < score ? color : "bg-gray-200 dark:bg-gray-700"}`} />
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i < score ? color : "bg-gray-200 dark:bg-gray-700"}`}
+          />
         ))}
       </div>
-      <p className={`text-xs font-medium ${score >= 3 ? "text-emerald-600 dark:text-emerald-400" : score >= 2 ? "text-amber-600 dark:text-amber-400" : "text-red-500"}`}>
+      <p
+        className={`text-xs font-medium ${score >= 3 ? "text-emerald-600 dark:text-emerald-400" : score >= 2 ? "text-amber-600 dark:text-amber-400" : "text-red-500"}`}
+      >
         {label}
       </p>
     </div>
@@ -111,11 +375,28 @@ function PasswordStrength({ password }) {
 // ===================== GOOGLE ICON (COLORED) =====================
 function GoogleIcon({ size = 18 }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
     </svg>
   );
 }
@@ -132,7 +413,8 @@ function validateIdentifier(identifier) {
 
 function mapErrorToMicrocopy(errorCode) {
   const mapping = {
-    AUTH_LOGIN_FAILED: "We couldn't sign you in. Check your details and try again.",
+    AUTH_LOGIN_FAILED:
+      "We couldn't sign you in. Check your details and try again.",
     AUTH_OTP_INVALID: "That code is incorrect or expired. Request a new one.",
     NETWORK_OFFLINE: "No internet connection. Check your network and retry.",
   };
@@ -156,18 +438,29 @@ const Auth = () => {
   const [direction, setDirection] = useState("forward");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { user } = useSelector((state) => state.auth);
 
-    const [form, setForm] = useState({
-      identifier: "", // phone or email
-      fullName: "",   // required for signup
-      otp: "",
-      role: "customer",
-    });
+  // Inside your Auth Component wrapper:
+  const dispatch = useDispatch();
+  // 4. Evaluate routing steps using the precise dynamic states
+  // 4. Evaluate routing steps using precise onboarding states
+  // const isOnboardingComplete = user?.onboarding?.completed === true;
+  // const currentStepInDb = user?.onboarding?.current_step;
+  // const userRole = user?.roles || form.role;
+
+  const [form, setForm] = useState({
+    identifier: "", // phone or email
+    fullName: "", // required for signup
+    otp: "",
+    role: "customer",
+  });
 
   // ===================== EFFECTS =====================
   useEffect(() => {
     const saved = localStorage.getItem(DARK_KEY);
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     const isDark = saved === "true" || (!saved && prefersDark);
     setDark(isDark);
     if (isDark) document.documentElement.classList.add("dark");
@@ -180,7 +473,8 @@ const Auth = () => {
   }, [dark]);
 
   useEffect(() => {
-    if (location.pathname === "/login" || location.pathname === "/signin") setStep(STEPS.SIGN_IN);
+    if (location.pathname === "/login" || location.pathname === "/signin")
+      setStep(STEPS.SIGN_IN);
     if (location.pathname === "/register") setStep(STEPS.REGISTER_BASICS);
   }, [location.pathname]);
 
@@ -196,24 +490,37 @@ const Auth = () => {
     const onOnline = () => setOffline(false);
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
-    return () => { window.removeEventListener("offline", onOffline); window.removeEventListener("online", onOnline); };
+    return () => {
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+    };
   }, []);
 
   useEffect(() => {
     if (!otpTimer) return undefined;
-    const id = window.setInterval(() => setOtpTimer((prev) => Math.max(0, prev - 1)), 1000);
+    const id = window.setInterval(
+      () => setOtpTimer((prev) => Math.max(0, prev - 1)),
+      1000,
+    );
     return () => window.clearInterval(id);
   }, [otpTimer]);
 
   // ===================== DARK MODE =====================
   const toggleDark = useCallback(() => {
-    setDark((prev) => { const next = !prev; localStorage.setItem(DARK_KEY, String(next)); return next; });
+    setDark((prev) => {
+      const next = !prev;
+      localStorage.setItem(DARK_KEY, String(next));
+      return next;
+    });
   }, []);
 
   const maskedDestination = useMemo(() => {
     const id = form.identifier.trim();
     if (!id) return "";
-    if (id.includes("@")) { const [name, domain] = id.split("@"); return `${name.slice(0, 2)}***@${domain}`; }
+    if (id.includes("@")) {
+      const [name, domain] = id.split("@");
+      return `${name.slice(0, 2)}***@${domain}`;
+    }
     const compact = id.replace(/\s/g, "");
     return `${compact.slice(0, 4)}****${compact.slice(-2)}`;
   }, [form.identifier]);
@@ -224,16 +531,26 @@ const Auth = () => {
     setGlobalError("");
   };
 
-  const simulateRequest = (ms = 900) => new Promise((resolve) => window.setTimeout(resolve, ms));
+  const simulateRequest = (ms = 900) =>
+    new Promise((resolve) => window.setTimeout(resolve, ms));
 
   const handleNetworkGuard = () => {
-    if (offline) { setGlobalError(mapErrorToMicrocopy("NETWORK_OFFLINE")); return false; }
+    if (offline) {
+      setGlobalError(mapErrorToMicrocopy("NETWORK_OFFLINE"));
+      return false;
+    }
     return true;
   };
 
   const goToLandingByRole = (role) => {
-    localStorage.setItem("user", JSON.stringify({ role, identifier: form.identifier }));
-    if (role === "provider") { navigate("/provider/onboarding"); return; }
+    localStorage.setItem(
+      "user",
+      JSON.stringify({ role, identifier: form.identifier }),
+    );
+    if (role === "provider") {
+      navigate("/provider/onboarding");
+      return;
+    }
     navigate("/");
   };
 
@@ -242,115 +559,244 @@ const Auth = () => {
     const oldIdx = allSteps.indexOf(step);
     const newIdx = allSteps.indexOf(newStep);
     setDirection(newIdx >= oldIdx ? "forward" : "backward");
-    setGlobalError(""); setGlobalSuccess("");
+    setGlobalError("");
+    setGlobalSuccess("");
     setStep(newStep);
   };
 
+  //role selection function starts here
+  const submitRoleSelection = async () => {
+    if (!form.role) {
+      setGlobalError("Please select an account type.");
+      return;
+    }
 
-const submitSignIn = async (e) => {
+    try {
+      setLoading(true);
+      setGlobalError("");
 
-    
-  e?.preventDefault();
-  
-  const identifierError = validateIdentifier(form.identifier);
+      const res = await api.post(
+        "/auth/select-role",
+        {
+          role: form.role,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        },
+      );
 
-  setFieldErrors({ identifier: identifierError });
+      const { next_step } = res.data.data;
 
-  if (identifierError || !handleNetworkGuard()) return;
+      if (next_step === "provider_profile") {
+        //changeStep(STEPS.PROVIDER_PROFILE);
+        goToLandingByRole("provider");
+      } else if (next_step === "terms_consent") {
+        changeStep(STEPS.TERMS_CONSENT);
+      }
+    } catch (error) {
+      console.error(error);
 
+      setGlobalError(
+        error.response?.data?.message || "Failed to save account type.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  try {
-    setLoading(true);
+  const submitSignIn = async (e) => {
+    e?.preventDefault();
+    const identifierError = validateIdentifier(form.identifier);
+    setFieldErrors({ identifier: identifierError });
 
-    // 1. Check if user exists
-    const res = await api.post("/auth/check-identifier", {
-      identifier: form.identifier,
-    });
-    
+    if (identifierError || !handleNetworkGuard()) return;
 
-    const { exists } = res.data;
-    console.log("check if user exist ", exists)
+    try {
+      setLoading(true);
+      setGlobalError("");
 
-    // 2. Branch logic
-    if (exists) {
-      // existing user → OTP login
-      await requestOtp(STEPS.OTP_SIGN_IN, form.identifier);
-      setStep("otp");
-    } else {
-      // new user → create account OR switch flow
-      await api.post("/auth/create-temp-user", {
+      const res = await api.post("/auth/request-otp", {
         identifier: form.identifier,
       });
 
-      await requestOtp(STEPS.OTP_SIGN_UP, form.identifier);
-      setStep("otp"); // or "profile" depending on your design
-    }
+      const { purpose, maskedIdentifier } = res.data;
 
-  } catch (err) {
-    setFieldErrors({
-      general: "Something went wrong. Please try again.",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
- 
+      // store masked version for UI display
+      setForm((prev) => ({
+        ...prev,
+        maskedIdentifier,
+      }));
+
+      setOtpTimer(60);
+
+      // decide next step based on backend response
+      if (purpose === "login") {
+        changeStep(STEPS.OTP_SIGN_IN);
+      } else {
+        changeStep(STEPS.OTP_SIGNUP);
+      }
+    } catch (err) {
+      setFieldErrors({
+        general: "Unable to send OTP. Try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const requestOtp = async (targetStep) => {
     const identifierError = validateIdentifier(form.identifier);
     setFieldErrors({ identifier: identifierError });
     if (identifierError || !handleNetworkGuard()) return;
-    setLoading(true); setSlowNetwork(false); setGlobalError("");
+
+    setLoading(true);
+    setSlowNetwork(false);
+    setGlobalError("");
+
     const slowTimer = window.setTimeout(() => setSlowNetwork(true), 1200);
-    try { await simulateRequest(); setOtpTimer(OTP_RESEND_SECONDS); setGlobalSuccess("OTP sent successfully."); changeStep(targetStep); }
-    catch { setGlobalError("Could not send OTP. Try again."); }
-    finally { window.clearTimeout(slowTimer); setLoading(false); setSlowNetwork(false); }
+
+    try {
+      // 💥 REPLACED MOCK WITH ACTIVE AXIOS HTTP DISPATCH
+      const res = await api.post("/auth/request-otp", {
+        identifier: form.identifier,
+        type: targetStep === STEPS.OTP_SIGNUP ? "signup" : "login",
+      });
+
+      // Track dynamic context parameters from backend response
+      const { purpose } = res.data;
+
+      setOtpTimer(OTP_RESEND_SECONDS);
+      setGlobalSuccess("A verification code was dispatched successfully.");
+
+      // Update state path safely based on what back-end reports
+      if (purpose === "login" || targetStep === STEPS.OTP_SIGN_IN) {
+        changeStep(STEPS.OTP_SIGN_IN);
+      } else {
+        changeStep(STEPS.OTP_SIGNUP);
+      }
+    } catch (error) {
+      console.error("OTP Dispatch Failure:", error);
+      setGlobalError(
+        error.response?.data?.message ||
+          "Could not send verification code. Please retry.",
+      );
+    } finally {
+      window.clearTimeout(slowTimer);
+      setLoading(false);
+      setSlowNetwork(false);
+    }
   };
 
+  const handleResendOtp = async () => {
+    try {
+      setLoading(true);
+      setGlobalError("");
 
+      await api.post("/auth/request-otp", {
+        identifier: form.identifier,
+      });
 
-// const verifyOtp = async () => {
-//   if (form.otp.length !== 6) {
-//     setFieldErrors({ otp: "OTP must be 6 digits" });
-//     return;
-//   }
+      setGlobalSuccess("A fresh verification code has been dispatched.");
 
-//   setLoading(true);
-//   setGlobalError("");
-
-//   try {
-//     const res = await api.post("/auth/verify-otp", {
-//       email: form.identifier,
-//       otp: form.otp,
-//     });
-
-//     console.log("LOGIN SUCCESS:", res.data);
-
-//     // 🔥 store user in Redux later
-//     dispatch(loginSuccess(res.data.data))
-
-//     navigate("/"); // go home
-
-//   } catch (err) {
-//     setGlobalError("Invalid or expired OTP");
-//   } finally {
-//     setLoading(false);
-//   }
-// };
+      // 🔑 THE FIX: Reset the countdown timer back to 60 seconds on successful resend!
+      setOtpTimer(60);
+    } catch (err) {
+      setGlobalError("Failed to resend verification code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const verifyOtpAndContinue = async (nextStep) => {
-    const otpError = form.otp.length === 6 ? "" : "OTP must be 6 digits.";
+    const otpError =
+      form.otp && form.otp.trim().length === 6
+        ? ""
+        : "OTP must be exactly 6 digits.";
     setFieldErrors({ otp: otpError });
     if (otpError || !handleNetworkGuard()) return;
-    setLoading(true); setSlowNetwork(false); setGlobalError("");
-    const slowTimer = window.setTimeout(() => setSlowNetwork(true), 1200);
+
     try {
-      await simulateRequest();
-      setGlobalSuccess("OTP verified.");
+      setLoading(true);
+      dispatch(loginStart()); // 🔑 Trigger Redux loading state
+
+      const res = await api.post("/auth/verify-otp", {
+        identifier: form.identifier,
+        otp: form.otp.trim(),
+      });
+
+      const { user_state, session, user } = res.data.data;
+      console.log(user);
+
+      if (session?.token) {
+        localStorage.setItem("authToken", session.token);
+        dispatch(loginSuccess(user)); // 🔑 Hydrate your Redux global user state profile tracker
+      }
+
       setForm((prev) => ({ ...prev, otp: "" }));
-      if (nextStep === STEPS.ACCOUNT_CREATED) goToLandingByRole(form.role);
-      else changeStep(nextStep);
-    } catch { setGlobalError(mapErrorToMicrocopy("AUTH_OTP_INVALID")); }
-    finally { window.clearTimeout(slowTimer); setLoading(false); setSlowNetwork(false); }
+
+      // 🔒 THE TRACTION TRAP: Look into database onboarding sub-properties
+      const isOnboardingComplete = user?.onboarding?.completed === true;
+      const currentStepInDb = user?.onboarding?.current_step;
+      const userRole = user?.role || user?.type || form.role;
+
+      if (!isOnboardingComplete) {
+        console.log(`Trap activated. Resuming at: ${currentStepInDb}`);
+
+        if (currentStepInDb === "terms_consent") {
+          changeStep(STEPS.TERMS_CONSENT);
+        } else if (currentStepInDb === "provider_profile") {
+          goToLandingByRole("provider");
+        } else {
+          changeStep(STEPS.ROLE_SELECTION);
+        }
+      } else {
+        if (nextStep === STEPS.ACCOUNT_CREATED) {
+          goToLandingByRole(userRole);
+        } else {
+          navigate("/");
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      dispatch(loginFailure()); // 🔑 Revert global states smoothly
+      setGlobalError(
+        error.response?.data?.message || "Invalid validation code.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitTermsConsent = async () => {
+    try {
+      setLoading(true);
+
+      // 1. Call your API endpoint that saves their terms agreement
+      const res = await api.post(
+        "/auth/accept-terms",
+        {}, // 🔑 Empty body payload data (Second argument)
+        {
+          headers: {
+            // 🔑 Actual request configurations (Third argument)
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        },
+      );
+      const confirmedRole = res.data.data?.role || user?.role || user?.type;
+
+      // 2. 🔑 Split navigation logic based on user type!
+      if (confirmedRole === "provider") {
+        goToLandingByRole("provider");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setGlobalError("Could not save terms consent verification.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const submitRegisterBasics = async (e) => {
@@ -358,7 +804,6 @@ const submitSignIn = async (e) => {
     const identifierError = validateIdentifier(form.identifier);
     const errors = {
       identifier: identifierError,
-
     };
     setFieldErrors(errors);
     if (Object.values(errors).some(Boolean) || !handleNetworkGuard()) return;
@@ -366,43 +811,63 @@ const submitSignIn = async (e) => {
   };
 
   const submitConsent = async () => {
-    if (!form.termsAccepted) { setGlobalError("Accept Terms and Privacy to continue."); return; }
+    if (!form.termsAccepted) {
+      setGlobalError("Accept Terms and Privacy to continue.");
+      return;
+    }
     if (!handleNetworkGuard()) return;
-    setLoading(true); setSlowNetwork(false); setGlobalError("");
+    setLoading(true);
+    setSlowNetwork(false);
+    setGlobalError("");
     const slowTimer = window.setTimeout(() => setSlowNetwork(true), 1200);
-    try { await simulateRequest(); changeStep(STEPS.ACCOUNT_CREATED); setTimeout(() => goToLandingByRole(form.role), 2000); }
-    finally { window.clearTimeout(slowTimer); setLoading(false); setSlowNetwork(false); }
+    try {
+      await simulateRequest();
+      changeStep(STEPS.ACCOUNT_CREATED);
+      setTimeout(() => goToLandingByRole(form.role), 2000);
+    } finally {
+      window.clearTimeout(slowTimer);
+      setLoading(false);
+      setSlowNetwork(false);
+    }
   };
 
   // ===================== ANIMATION =====================
-  const animClass = direction === "forward" ? "step-slide-right" : "step-slide-left";
+  const animClass =
+    direction === "forward" ? "step-slide-right" : "step-slide-left";
 
   // Input styling helper
   const inputWrap = "relative";
-  const inputBase = "w-full pl-11 pr-4 py-3.5 rounded-xl border text-sm transition-all duration-200 focus:outline-none focus:ring-2 input-glow bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400";
-  const inputOk = "border-gray-200 dark:border-gray-700 focus:border-brand-500 focus:ring-brand-100 dark:focus:ring-brand-900";
-  const inputErr = "border-red-300 dark:border-red-600 focus:ring-red-100 dark:focus:ring-red-900 bg-red-50/50 dark:bg-red-900/10";
-  const iconBase = "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none";
+  const inputBase =
+    "w-full pl-11 pr-4 py-3.5 rounded-xl border text-sm transition-all duration-200 focus:outline-none focus:ring-2 input-glow bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400";
+  const inputOk =
+    "border-gray-200 dark:border-gray-700 focus:border-brand-500 focus:ring-brand-100 dark:focus:ring-brand-900";
+  const inputErr =
+    "border-red-300 dark:border-red-600 focus:ring-red-100 dark:focus:ring-red-900 bg-red-50/50 dark:bg-red-900/10";
+  const iconBase =
+    "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none";
 
   const isSignInOrWelcome = step === STEPS.WELCOME || step === STEPS.SIGN_IN;
   const isRegister = step === STEPS.REGISTER_BASICS;
 
   // Hero content per state
   const heroContent = useMemo(() => {
-    if (isRegister) return {
-      badge: "Join 50,000+ users",
-      title: "Start finding trusted services today",
-      subtitle: "Create your free SureLink account and connect with verified professionals in your area.",
-      stats: [
-        { icon: "users", value: "50K+", label: "Active users" },
-        { icon: "star", value: "4.9", label: "Average rating" },
-        { icon: "globe", value: "100+", label: "Service areas" },
-      ],
-    };
+    if (isRegister)
+      return {
+        badge: "Join 50,000+ users",
+        title: "Start finding trusted services today",
+        subtitle:
+          "Create your free SureLink account and connect with verified professionals in your area.",
+        stats: [
+          { icon: "users", value: "50K+", label: "Active users" },
+          { icon: "star", value: "4.9", label: "Average rating" },
+          { icon: "globe", value: "100+", label: "Service areas" },
+        ],
+      };
     return {
       badge: "Welcome back",
       title: "Your trusted marketplace for local services",
-      subtitle: "Sign in to access verified professionals, manage bookings, and grow your business.",
+      subtitle:
+        "Sign in to access verified professionals, manage bookings, and grow your business.",
       stats: [
         { icon: "shield-check", value: "100%", label: "Verified pros" },
         { icon: "zap", value: "<5 min", label: "Avg. match time" },
@@ -410,6 +875,41 @@ const submitSignIn = async (e) => {
       ],
     };
   }, [isRegister]);
+
+  //=============== Rendering the next step ================
+  // 1. Ensure you import your provider form component at the top of the file!
+
+  // 2. Inside your main wizard component rendering block:
+  // const renderCurrentStep = () => {
+  //   switch (step) {
+  //     case STEPS.WELCOME:
+  //       return <WelcomeComponent />;
+  //     case STEPS.ROLE_SELECTION:
+  //       return <RoleSelectionForm />;
+
+  //     // 🔑 ADD THIS CASE: This handles your provider switch transition!
+  //     case STEPS.PROVIDER_PROFILE:
+  //       return (
+  //         <ProviderOnboarding
+  //           onComplete={() => changeStep(STEPS.TERMS_CONSENT)}
+  //         />
+  //       );
+
+  //     case STEPS.TERMS_CONSENT:
+  //       return <TermsConsentForm />;
+  //     case STEPS.ACCOUNT_CREATED:
+  //       return <AccountCreatedSuccess />;
+  //     default:
+  //       return <RoleSelectionForm />;
+  //   }
+  // };
+
+  // Your clean animated layout output wrapper
+  // return (
+  //   <div className={`wizard-container slide-${direction}`}>
+  //     {renderCurrentStep()}
+  //   </div>
+  // );
 
   // ===================== RENDER =====================
   return (
@@ -446,26 +946,38 @@ const submitSignIn = async (e) => {
       </button>
 
       <div className="min-h-screen flex flex-col lg:flex-row">
-
         {/* ===== LEFT - HERO PANEL ===== */}
-        <div className={`hidden lg:flex lg:w-[48%] xl:w-[45%] relative overflow-hidden ${dark ? "hero-gradient-dark" : "hero-gradient"}`}>
+        <div
+          className={`hidden lg:flex lg:w-[48%] xl:w-[45%] relative overflow-hidden ${dark ? "hero-gradient-dark" : "hero-gradient"}`}
+        >
           {/* Decorative circles */}
           <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-white/10 float-anim" />
-          <div className="absolute bottom-20 -right-16 w-48 h-48 rounded-full bg-white/5 float-anim" style={{ animationDelay: "2s" }} />
-          <div className="absolute top-1/3 right-10 w-24 h-24 rounded-full bg-white/5 float-anim" style={{ animationDelay: "4s" }} />
+          <div
+            className="absolute bottom-20 -right-16 w-48 h-48 rounded-full bg-white/5 float-anim"
+            style={{ animationDelay: "2s" }}
+          />
+          <div
+            className="absolute top-1/3 right-10 w-24 h-24 rounded-full bg-white/5 float-anim"
+            style={{ animationDelay: "4s" }}
+          />
 
           <div className="relative z-10 flex flex-col justify-between p-10 xl:p-14 text-white w-full">
             {/* Logo */}
             <div>
-               <Link to="/">
-               <span  className="text-2xl font-extrabold tracking-tight">SureLink</span>
-               </Link>
+              <Link to="/">
+                <span className="text-2xl font-extrabold tracking-tight">
+                  SureLink
+                </span>
+              </Link>
             </div>
 
             {/* Main content */}
             <div className="space-y-8 step-fade-up">
               <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest glass-card">
-                <div className="w-2 h-2 rounded-full bg-emerald-400" style={{ animation: "pulse-dot 2s infinite" }} />
+                <div
+                  className="w-2 h-2 rounded-full bg-emerald-400"
+                  style={{ animation: "pulse-dot 2s infinite" }}
+                />
                 {heroContent.badge}
               </div>
 
@@ -480,9 +992,16 @@ const submitSignIn = async (e) => {
               {/* Stats */}
               <div className="flex gap-6 pt-2">
                 {heroContent.stats.map((s) => (
-                  <div key={s.label} className="glass-card rounded-xl px-5 py-4 text-center min-w-[100px]">
-                    <div className="text-2xl font-extrabold mb-0.5">{s.value}</div>
-                    <div className="text-xs text-blue-200 dark:text-blue-300/60 font-medium">{s.label}</div>
+                  <div
+                    key={s.label}
+                    className="glass-card rounded-xl px-5 py-4 text-center min-w-[100px]"
+                  >
+                    <div className="text-2xl font-extrabold mb-0.5">
+                      {s.value}
+                    </div>
+                    <div className="text-xs text-blue-200 dark:text-blue-300/60 font-medium">
+                      {s.label}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -491,16 +1010,29 @@ const submitSignIn = async (e) => {
             {/* Testimonial */}
             <div className="glass-card rounded-xl p-5 mt-auto">
               <div className="flex items-center gap-1.5 mb-2">
-                {[1,2,3,4,5].map((i) => <Icon key={i} name="star" size={14} className="text-amber-400" />)}
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Icon
+                    key={i}
+                    name="star"
+                    size={14}
+                    className="text-amber-400"
+                  />
+                ))}
               </div>
               <p className="text-sm text-blue-100 dark:text-blue-200/70 italic leading-relaxed">
-                "SureLink connected me with a verified plumber in under 10 minutes. The trust factor is real — I could see their ratings, reviews, and ID verification badge."
+                "SureLink connected me with a verified plumber in under 10
+                minutes. The trust factor is real — I could see their ratings,
+                reviews, and ID verification badge."
               </p>
               <div className="mt-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">AK</div>
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                  AK
+                </div>
                 <div>
                   <div className="text-sm font-semibold">Ama K.</div>
-                  <div className="text-xs text-blue-200 dark:text-blue-300/50">Accra, Ghana</div>
+                  <div className="text-xs text-blue-200 dark:text-blue-300/50">
+                    Accra, Ghana
+                  </div>
                 </div>
               </div>
             </div>
@@ -510,10 +1042,11 @@ const submitSignIn = async (e) => {
         {/* ===== RIGHT - FORM PANEL ===== */}
         <div className="flex-1 flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-16 xl:px-20">
           <div className="w-full max-w-[440px] mx-auto">
-            
             {/* Mobile logo */}
             <div className="lg:hidden mb-8">
-              <span className="text-2xl font-extrabold tracking-tight text-brand-500">SureLink</span>
+              <span className="text-2xl font-extrabold tracking-tight text-brand-500">
+                SureLink
+              </span>
             </div>
 
             {/* Offline Banner */}
@@ -525,25 +1058,54 @@ const submitSignIn = async (e) => {
             )}
 
             {/* Status banners */}
-            {slowNetwork && <div className="mb-4"><FeedbackBanner type="warning" message="Network is slow. Hold on…" /></div>}
-            {globalError && <div className="mb-4"><FeedbackBanner type="error" message={globalError} onRetry={() => setGlobalError("")} /></div>}
-            {globalSuccess && <div className="mb-4"><FeedbackBanner type="success" message={globalSuccess} /></div>}
+            {slowNetwork && (
+              <div className="mb-4">
+                <FeedbackBanner
+                  type="warning"
+                  message="Network is slow. Hold on…"
+                />
+              </div>
+            )}
+            {globalError && (
+              <div className="mb-4">
+                <FeedbackBanner
+                  type="error"
+                  message={globalError}
+                  onRetry={() => setGlobalError("")}
+                />
+              </div>
+            )}
+            {globalSuccess && (
+              <div className="mb-4">
+                <FeedbackBanner type="success" message={globalSuccess} />
+              </div>
+            )}
 
             {/* ===== WELCOME ===== */}
             {step === STEPS.WELCOME && (
               <div className={`space-y-6 ${animClass}`} key="welcome">
                 <div>
-                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">Get started</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Sign in or create an account to continue.</p>
+                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">
+                    Get started
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Sign in or create an account to continue.
+                  </p>
                 </div>
 
                 {/* Social login */}
                 <div className="grid grid-cols-2 gap-3">
-                  <button type="button" className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                  <button
+                    type="button"
+                    className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                  >
                     <GoogleIcon />
                     <span>Google</span>
                   </button>
-                  <button type="button" className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                  <button
+                    type="button"
+                    className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                  >
                     <i className="fab fa-apple text-lg"></i>
                     <span>Apple</span>
                   </button>
@@ -552,14 +1114,33 @@ const submitSignIn = async (e) => {
                 {/* Divider */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">or</span>
+                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                    or
+                  </span>
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
                 </div>
 
-                <AuthButton onClick={() => changeStep(STEPS.SIGN_IN)}>Sign in with email or phone</AuthButton>
-                <AuthButton variant="secondary" onClick={() => changeStep(STEPS.REGISTER_BASICS)}>Create account</AuthButton>
+                <AuthButton onClick={() => changeStep(STEPS.SIGN_IN)}>
+                  Sign in with email or phone
+                </AuthButton>
+                <AuthButton
+                  variant="secondary"
+                  onClick={() => changeStep(STEPS.REGISTER_BASICS)}
+                >
+                  Create account
+                </AuthButton>
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">By continuing, you agree to our <button className="text-brand-500 hover:underline font-medium">Terms</button> and <button className="text-brand-500 hover:underline font-medium">Privacy Policy</button>.</p>
+                  <p className="text-xs text-gray-400">
+                    By continuing, you agree to our{" "}
+                    <button className="text-brand-500 hover:underline font-medium">
+                      Terms
+                    </button>{" "}
+                    and{" "}
+                    <button className="text-brand-500 hover:underline font-medium">
+                      Privacy Policy
+                    </button>
+                    .
+                  </p>
                 </div>
               </div>
             )}
@@ -568,17 +1149,29 @@ const submitSignIn = async (e) => {
             {step === STEPS.SIGN_IN && (
               <div className={animClass} key="signin">
                 <div className="mb-7">
-                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">Welcome back</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Enter your details to sign in.</p>
+                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">
+                    Welcome back
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Enter your details to sign in.
+                  </p>
                 </div>
 
                 {/* Social login */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
-                  <button type="button" disabled={loading} className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition"
+                  >
                     <GoogleIcon />
                     <span>Google</span>
                   </button>
-                  <button type="button" disabled={loading} className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition"
+                  >
                     <i className="fab fa-apple text-lg"></i>
                     <span>Apple</span>
                   </button>
@@ -587,41 +1180,72 @@ const submitSignIn = async (e) => {
                 {/* Divider */}
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">or</span>
+                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                    or
+                  </span>
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
                 </div>
-
+                {/*  Sign in form*/}
                 <form onSubmit={submitSignIn} className="space-y-4">
                   {/* Email */}
                   <div>
-                    <label htmlFor="signin-id" className="block text-sm font-semibold mb-1.5"> Phone Or Email</label>
+                    <label
+                      htmlFor="signin-id"
+                      className="block text-sm font-semibold mb-1.5"
+                    >
+                      {" "}
+                      Phone Or Email
+                    </label>
                     <div className={inputWrap}>
                       <Icon name="" size={16} className={iconBase} />
                       <Icon name="globe" size={16} className={iconBase} />
-                      <input id="signin-id" type="text" placeholder="you@examble.com" value={form.identifier} disabled={loading}
-                        onChange={(e) => updateField("identifier", e.target.value)}
-                        className={`${inputBase} ${fieldErrors.identifier ? inputErr : inputOk}`} />
+                      <input
+                        id="signin-id"
+                        type="text"
+                        placeholder="you@examble.com"
+                        value={form.identifier}
+                        disabled={loading}
+                        onChange={(e) =>
+                          updateField("identifier", e.target.value)
+                        }
+                        className={`${inputBase} ${fieldErrors.identifier ? inputErr : inputOk}`}
+                      />
                     </div>
-                    {fieldErrors.identifier && <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.identifier}</p>}
+                    {fieldErrors.identifier && (
+                      <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake">
+                        <AuthIcon name="alert-circle" size={12} />
+                        {fieldErrors.identifier}
+                      </p>
+                    )}
                   </div>
 
                   {/* Password */}
-                  <div>
+                  <div></div>
 
-                  </div>
-
-                  <AuthButton type="submit" loading={loading} disabled={loading}>
+                  <AuthButton
+                    type="submit"
+                    loading={loading}
+                    disabled={loading}
+                  >
                     Sign in
                   </AuthButton>
                 </form>
 
                 <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center justify-center gap-1">
-                  <button type="button" className="text-brand-500 hover:underline font-medium" onClick={() => requestOtp(STEPS.OTP_SIGN_IN)}>
+                  <button
+                    type="button"
+                    className="text-brand-500 hover:underline font-medium"
+                    onClick={() => requestOtp(STEPS.OTP_SIGN_IN)}
+                  >
                     Continue
                   </button>
                   <span>·</span>
                   <span>Don't have an account?</span>
-                  <button type="button" className="text-brand-500 hover:underline font-semibold" onClick={() => changeStep(STEPS.REGISTER_BASICS)}>
+                  <button
+                    type="button"
+                    className="text-brand-500 hover:underline font-semibold"
+                    onClick={() => changeStep(STEPS.REGISTER_BASICS)}
+                  >
                     Sign up
                   </button>
                 </div>
@@ -632,24 +1256,68 @@ const submitSignIn = async (e) => {
             {(step === STEPS.OTP_SIGN_IN || step === STEPS.OTP_SIGNUP) && (
               <div className={animClass} key="otp">
                 <div className="mb-7">
-                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">Verify your identity</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Enter the 6-digit code sent to <span className="font-semibold text-gray-900 dark:text-gray-100">{maskedDestination || "your device"}</span>.</p>
+                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">
+                    Verify your identity
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Enter the 6-digit code sent to{" "}
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">
+                      {maskedDestination || "your device"}
+                    </span>
+                    .
+                  </p>
                 </div>
 
                 <div className="space-y-5">
-                  <OtpInputGroup value={form.otp} onChange={(value) => updateField("otp", value)} disabled={loading} />
-                  {fieldErrors.otp && <p className="text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.otp}</p>}
-                  
-                  <AuthButton onClick={() => verifyOtpAndContinue(step === STEPS.OTP_SIGN_IN ? STEPS.ACCOUNT_CREATED : STEPS.ROLE_SELECTION)} loading={loading} disabled={loading}>
+                  <OtpInputGroup
+                    value={form.otp}
+                    onChange={(value) => updateField("otp", value)}
+                    disabled={loading}
+                  />
+                  {fieldErrors.otp && (
+                    <p className="text-xs text-red-500 flex items-center gap-1 field-error-shake">
+                      <AuthIcon name="alert-circle" size={12} />
+                      {fieldErrors.otp}
+                    </p>
+                  )}
+
+                  <AuthButton
+                    onClick={() =>
+                      verifyOtpAndContinue(
+                        step === STEPS.OTP_SIGN_IN
+                          ? STEPS.ACCOUNT_CREATED
+                          : STEPS.ROLE_SELECTION,
+                      )
+                    }
+                    loading={loading}
+                    disabled={loading}
+                  >
                     {step === STEPS.OTP_SIGN_IN ? "Verify & sign in" : "Verify"}
                   </AuthButton>
 
                   <div className="flex justify-between text-sm">
-                    <button type="button" className="text-brand-500 hover:underline font-medium" onClick={() => changeStep(step === STEPS.OTP_SIGN_IN ? STEPS.SIGN_IN : STEPS.REGISTER_BASICS)}>
+                    <button
+                      type="button"
+                      className="text-brand-500 hover:underline font-medium"
+                      onClick={() =>
+                        changeStep(
+                          step === STEPS.OTP_SIGN_IN
+                            ? STEPS.SIGN_IN
+                            : STEPS.REGISTER_BASICS,
+                        )
+                      }
+                    >
                       ← Change details
                     </button>
-                    <button type="button" className="text-brand-500 hover:underline font-medium disabled:text-gray-400" disabled={otpTimer > 0 || loading} onClick={() => requestOtp(step)}>
-                      {otpTimer > 0 ? `Resend 0:${String(otpTimer).padStart(2, "0")}` : "Resend code"}
+                    <button
+                      type="button"
+                      className="text-brand-500 hover:underline font-medium disabled:text-gray-400"
+                      disabled={otpTimer > 0 || loading}
+                      onClick={() => requestOtp(step)}
+                    >
+                      {otpTimer > 0
+                        ? `Resend 0:${String(otpTimer).padStart(2, "0")}`
+                        : "Resend code"}
                     </button>
                   </div>
                 </div>
@@ -660,17 +1328,29 @@ const submitSignIn = async (e) => {
             {step === STEPS.REGISTER_BASICS && (
               <div className={animClass} key="register">
                 <div className="mb-7">
-                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">Create your account</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Join thousands of trusted users on SureLink.</p>
+                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">
+                    Create your account
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Join thousands of trusted users on SureLink.
+                  </p>
                 </div>
 
                 {/* Social login */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
-                  <button type="button" disabled={loading} className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition"
+                  >
                     <GoogleIcon />
                     <span>Google</span>
                   </button>
-                  <button type="button" disabled={loading} className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="social-btn flex items-center justify-center gap-2.5 border border-gray-200 dark:border-gray-700 rounded-xl py-3 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition"
+                  >
                     <i className="fab fa-apple text-lg"></i>
                     <span>Apple</span>
                   </button>
@@ -678,11 +1358,13 @@ const submitSignIn = async (e) => {
 
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">or</span>
+                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                    or
+                  </span>
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
                 </div>
 
-                <form onSubmit={submitRegisterBasics} className="space-y-4">
+                <form onSubmit={submitSignIn} className="space-y-4">
                   {/* Full name */}
                   {/* <div>
                     <label htmlFor="reg-name" className="block text-sm font-semibold mb-1.5">Full name</label>
@@ -697,14 +1379,32 @@ const submitSignIn = async (e) => {
 
                   {/* Email/Phone */}
                   <div>
-                    <label htmlFor="reg-id" className="block text-sm font-semibold mb-1.5">Email or phone</label>
+                    <label
+                      htmlFor="reg-id"
+                      className="block text-sm font-semibold mb-1.5"
+                    >
+                      Email or phone
+                    </label>
                     <div className={inputWrap}>
                       <Icon name="mail" size={16} className={iconBase} />
-                      <input id="reg-id" type="text" placeholder="you@example.com" value={form.identifier} disabled={loading}
-                        onChange={(e) => updateField("identifier", e.target.value)}
-                        className={`${inputBase} ${fieldErrors.identifier ? inputErr : inputOk}`} />
+                      <input
+                        id="reg-id"
+                        type="text"
+                        placeholder="you@example.com"
+                        value={form.identifier}
+                        disabled={loading}
+                        onChange={(e) =>
+                          updateField("identifier", e.target.value)
+                        }
+                        className={`${inputBase} ${fieldErrors.identifier ? inputErr : inputOk}`}
+                      />
                     </div>
-                    {fieldErrors.identifier && <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.identifier}</p>}
+                    {fieldErrors.identifier && (
+                      <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake">
+                        <AuthIcon name="alert-circle" size={12} />
+                        {fieldErrors.identifier}
+                      </p>
+                    )}
                   </div>
 
                   {/* Password */}
@@ -738,78 +1438,172 @@ const submitSignIn = async (e) => {
                     {fieldErrors.confirmPassword && <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 field-error-shake"><AuthIcon name="alert-circle" size={12}/>{fieldErrors.confirmPassword}</p>}
                   </div> */}
 
-                  <AuthButton type="submit" loading={loading} disabled={loading}>
+                  <AuthButton
+                    type="submit"
+                    loading={loading}
+                    disabled={loading}
+                  >
                     Create account
                   </AuthButton>
                 </form>
 
                 <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
                   Already have an account?{" "}
-                  <button type="button" className="text-brand-500 hover:underline font-semibold" onClick={() => changeStep(STEPS.SIGN_IN)}>Sign in</button>
+                  <button
+                    type="button"
+                    className="text-brand-500 hover:underline font-semibold"
+                    onClick={() => changeStep(STEPS.SIGN_IN)}
+                  >
+                    Sign in
+                  </button>
                 </p>
               </div>
             )}
 
-            {/* ===== ROLE SELECTION ===== */}
+            {/* ===================== NEW CODE PATH: ROLE SELECTION STEP ===================== */}
             {step === STEPS.ROLE_SELECTION && (
-              <div className={`space-y-5 ${animClass}`} key="role">
-                <div className="mb-2">
-                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">How will you use SureLink?</h2>
-                  <p className="text-gray-500 dark:text-gray-400">You can always change this later.</p>
+              <div className={animClass} key="role_selection">
+                <div className="mb-7">
+                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">
+                    Select Account Type
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Choose how you want to configure your profile footprint.
+                  </p>
                 </div>
-                <RoleCard
-                  title="I need services"
-                  description="Find and book verified local professionals."
-                  icon={<Icon name="user" size={22} className="text-brand-500" />}
-                  selected={form.role === "consumer"}
-                  disabled={loading}
-                  onClick={() => updateField("role", "consumer")}
-                />
-                <RoleCard
-                  title="I provide services"
-                  description="List your services and connect with customers."
-                  icon={<Icon name="briefcase" size={22} className="text-brand-500" />}
-                  selected={form.role === "provider"}
-                  disabled={loading}
-                  onClick={() => updateField("role", "provider")}
-                />
-                <AuthButton onClick={() => changeStep(STEPS.CONSENT)}>
-                  <span>Continue</span>
-                  <Icon name="arrow-right" size={16} />
-                </AuthButton>
+
+                <div className="space-y-3">
+                  {/* Option 1: Customer Profile Selection */}
+                  <button
+                    type="button"
+                    onClick={() => updateField("role", "customer")}
+                    className={`w-full p-4 rounded-xl border text-left transition ${
+                      form.role === "customer"
+                        ? "border-blue-500 bg-blue-50/40 dark:bg-blue-950/20"
+                        : "border-gray-200 dark:border-gray-800"
+                    }`}
+                  >
+                    <div className="font-bold text-sm text-gray-900 dark:text-gray-100">
+                      Customer Account
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      I want to browse and request verified services.
+                    </div>
+                  </button>
+
+                  {/* Option 2: Service Provider Profile Selection */}
+                  <button
+                    type="button"
+                    onClick={() => updateField("role", "provider")}
+                    className={`w-full p-4 rounded-xl border text-left transition ${
+                      form.role === "provider"
+                        ? "border-blue-500 bg-blue-50/40 dark:bg-blue-950/20"
+                        : "border-gray-200 dark:border-gray-800"
+                    }`}
+                  >
+                    <div className="font-bold text-sm text-gray-900 dark:text-gray-100">
+                      Task Provider / Specialist
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      I want to list skills, complete jobs, or fulfill orders.
+                    </div>
+                  </button>
+                </div>
+
+                {/* Submit Consent Routing Trigger */}
+                <div className="mt-6">
+                  <AuthButton
+                    onClick={submitRoleSelection}
+                    loading={loading}
+                    disabled={loading}
+                  >
+                    Continue
+                  </AuthButton>
+                </div>
               </div>
             )}
 
-            {/* ===== CONSENT ===== */}
-            {step === STEPS.CONSENT && (
-              <div className={`space-y-5 ${animClass}`} key="consent">
-                <div className="mb-2">
-                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">Almost there</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Review and accept to finish.</p>
+            {/* ===================== NEW CODE PATH: TERMS CONSENT STEP ===================== */}
+            {step === STEPS.TERMS_CONSENT && (
+              <div className={animClass} key="terms_consent">
+                <div className="mb-7">
+                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">
+                    Operational Guidelines
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Accept platform conditions to access your registration
+                    dashboard.
+                  </p>
                 </div>
-                <ConsentRow id="terms" checked={form.termsAccepted} disabled={loading} onChange={(c) => updateField("termsAccepted", c)}>
-                  I agree to the <span className="text-brand-500 font-semibold">Terms of Service</span> and <span className="text-brand-500 font-semibold">Privacy Policy</span>.
-                </ConsentRow>
-                <ConsentRow id="marketing" checked={form.marketingOptIn} disabled={loading} onChange={(c) => updateField("marketingOptIn", c)}>
-                  Send me product updates and offers (optional).
-                </ConsentRow>
-                <AuthButton onClick={submitConsent} loading={loading} disabled={loading || !form.termsAccepted}>
-                  Create account
-                </AuthButton>
+
+                <div className="flex items-start gap-3 bg-gray-50 dark:bg-gray-950 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                  {/* Example form wrapper around your terms section layout */}
+                  <form onSubmit={submitTermsConsent} className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="terms-check"
+                        checked={form.termsAccepted || false}
+                        onChange={(e) =>
+                          updateField("termsAccepted", e.target.checked)
+                        }
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor="terms-check"
+                        className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed"
+                      >
+                        I agree to the SureLink Terms of Service and Privacy
+                        Policy. I recognize that my profile data updates will
+                        undergo secure processing.
+                      </label>
+                    </div>
+
+                    {/* 🔑 Connect the button actions */}
+                    <button
+                      type="submit"
+                      onClick={submitTermsConsent}
+                      disabled={!form.termsAccepted || loading}
+                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                    >
+                      {loading ? "Processing..." : "Accept & Continue"}
+                    </button>
+                  </form>
+                </div>
+
+                {/* <div className="mt-6">
+                  <AuthButton 
+                    disabled={!form.termsAccepted || loading} 
+                    onClick={submitConsent}
+                  >
+                    Agree & Proceed
+                  </AuthButton>
+                </div> */}
               </div>
             )}
-
             {/* ===== ACCOUNT CREATED ===== */}
             {step === STEPS.ACCOUNT_CREATED && (
-              <div className="text-center space-y-5 py-8 step-fade-up" key="created">
+              <div
+                className="text-center space-y-5 py-8 step-fade-up"
+                key="created"
+              >
                 <div className="w-20 h-20 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
-                  <Icon name="check-circle" size={40} className="text-emerald-500" />
+                  <Icon
+                    name="check-circle"
+                    size={40}
+                    className="text-emerald-500"
+                  />
                 </div>
-                <h2 className="text-3xl font-extrabold tracking-tight">You're all set!</h2>
-                <p className="text-gray-500 dark:text-gray-400">Setting up your experience…</p>
+                <h2 className="text-3xl font-extrabold tracking-tight">
+                  You're all set!
+                </h2>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Setting up your experience…
+                </p>
                 {form.role === "provider" && (
                   <div className="rounded-xl bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 p-4 text-sm text-brand-700 dark:text-brand-400">
-                    Next: Complete your provider profile to start getting requests.
+                    Next: Complete your provider profile to start getting
+                    requests.
                   </div>
                 )}
               </div>

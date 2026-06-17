@@ -299,6 +299,18 @@ function ProviderOnboardingStep1Profile() {
                 </div>
 
                 {/* Primary Category */}
+                           <div className="mb-4">
+                           <div>
+                    <label htmlFor="area" className="mb-1.5 flex items-center gap-1 text-sm font-semibold">
+                      Service area <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Icon name="map-pin" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input id="area" type="text" placeholder="e.g. East Legon, Accra" value={form.area} disabled={loading} onChange={(e) => updateField("area", e.target.value)} className={`${inputClass} pl-9 ${fieldErrors.area ? "!border-red-400 dark:!border-red-500" : ""}`} />
+                    </div>
+                    {renderFieldError("area")}
+                  </div>
+                </div>
                 <div className="mb-4">
                   <label htmlFor="category" className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold">
                     Primary service category <span className="text-red-500">*</span>

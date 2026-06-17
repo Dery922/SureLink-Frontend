@@ -33,16 +33,3 @@ export const mockRegister = (data) => {
     }, 800);
   });
 };
-
-export const mockLogout = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve({ success: true }), 300);
-  });
-};
-
-export const logoutUser = () => {
-     
-}
-export const loginSuccess = () => {
-     
-}
