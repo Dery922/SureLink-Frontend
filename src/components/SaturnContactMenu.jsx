@@ -105,7 +105,7 @@ export default function SaturnContactMenu() {
       <motion.button
         whileTap={{ scale: 0.9 }}
         onClick={() => setOpen(!open)}
-        className="w-20 h-20 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xl"
+        className="w-20 h-20 rounded-full bg-gradient-to-r from-cyan-500 font-bold to-blue-600 text-white shadow-xl"
       >
         Help
       </motion.button>
