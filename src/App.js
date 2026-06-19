@@ -29,6 +29,10 @@ import {
   setInitializingFalse,
 } from "./redux/features/auth/authSlice.js";
 import LoginPage from "./Pages/adminPages/Login.jsx";
+import CustomerOnboarding from "./Pages/CustomerOnboardingGate.jsx";
+import ProviderDashboard from "./Pages/ProviderDashboard.jsx";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute.jsx";
+import SaturnContactMenu from "./components/SaturnContactMenu.jsx";
 
 function App() {
   const [initializing, setInitializing] = useState(true);
@@ -38,44 +42,10 @@ function App() {
   const location = useLocation();
   const { user, loading } = useSelector((state) => state.auth);
 
-  //this useEffect make sure we users are always login
-  //   useEffect(() => {
-  //   const checkAuthStatus = async () => {
-  //     const token = localStorage.getItem("authToken");
-
-  //     // 1. If no token exists, send them to login (if they aren't already there)
-  //     if (!token) {
-  //       setInitializing(false);
-  //       if (location.pathname !== "/login") navigate("/login");
-  //       return;
-  //     }
-
-  //     try {
-  //       // 2. Token exists! Verify it automatically against the backend
-  //       const res = await api.get("/auth/me", {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-
-  //       // 3. Keep user state in React context
-  //       setUser(res.data.data.user);
-
-  //       // 4. Auto-route them past login straight into the dashboard
-  //       if (location.pathname === "/login") {
-  //         navigate("/dashboard");
-  //       }
-  //     } catch (err) {
-  //       console.error("Auto-login token expired or invalid:", err);
-  //       localStorage.removeItem("authToken"); // Clean bad token
-  //       navigate("/login");
-  //     } finally {
-  //       setInitializing(false);
-  //     }
-  //   };
-
-  //   checkAuthStatus();
-  // }, []);
-
   useEffect(() => {
+    // 🚀 THE LIFECYCLE GUARD: Track whether this specific effect execution is still active
+    let isMounted = true;
+
     const autoRestoreSession = async () => {
       const token = localStorage.getItem("authToken");
 
@@ -85,26 +55,64 @@ function App() {
       }
 
       try {
-        // Automatically verify token against backend on mount
-        const res = await api.get("/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Inject authorization token cleanly onto your Axios instance defaults
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        const res = await api.get("/auth/me");
+        if (!isMounted) return;
 
-        const activeUser = res.data.data.user;
+        // Isolate the clean database profile fields
+        const activeUser =
+          res.data?.data?.user || res.data?.user || res.data?.data;
+
+        if (!activeUser) {
+          throw new Error("No user document found in API response wrapper.");
+        }
+
+        // Commit object directly to storages
+        localStorage.setItem("authToken", token);
+        localStorage.setItem("user", JSON.stringify(activeUser));
+
+        // 🚀 DISPATCH THE FLAT OBJECT ALONE
         dispatch(loginSuccess(activeUser));
 
-        // If they are hanging out on public login pages, route them past it
-        if (location.pathname === "/login" || location.pathname === "/signin") {
-          navigate("/dashboard");
+        // Onboarding routing redirects
+        if (
+          location.pathname === "/login" ||
+          location.pathname === "/signin" ||
+          location.pathname === "/register"
+        ) {
+          if (activeUser?.onboarding?.completed === false) {
+            const currentType = activeUser?.type || activeUser?.role;
+            if (currentType === "provider") {
+              navigate("/provider/onboarding");
+            } else {
+              navigate("/customer/onboarding");
+            }
+          } else {
+            navigate("/");
+          }
         }
       } catch (err) {
-        console.error("Auto-login token expired or invalid:", err.message);
-        localStorage.removeItem("authToken");
-        dispatch(loginFailure());
+        // Only run the error handler and clear storage if this is the active lifecycle instance
+        if (isMounted) {
+          console.error(
+            "💥 SCRIPT LEVEL AUTOMATIC RECOVERY DROPPED:",
+            err.message,
+          );
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("user");
+          dispatch(loginFailure());
+        }
       }
     };
 
     autoRestoreSession();
+
+    // 🚀 CLEANUP FUNCTION: Runs immediately if React remounts the component
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
   // if (initializing) {
@@ -113,6 +121,7 @@ function App() {
 
   return (
     <div className="App">
+      <SaturnContactMenu />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Auth />} />
@@ -130,6 +139,7 @@ function App() {
           path="/provider/onboarding"
           element={<ProviderOnboardingGate />}
         />
+        <Route path="/customer/onboarding" element={<CustomerOnboarding />} />
 
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
@@ -146,6 +156,15 @@ function App() {
         <Route
           path="/booking-confirmation/:proverId"
           element={<BookingConfirmation />}
+        />
+        <Route
+          path="/provider-dashbaord"
+          element={
+            <ProtectedRoute>
+              {" "}
+              <ProviderDashboard />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/provider-onboarding/review"

@@ -939,24 +939,22 @@ export default function ProviderOnboarding() {
       );
 
       if (data.success) {
+        // 🎯 STEP 1: Clear the local storage cache immediately BEFORE modifying UI triggers
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("profile_draft_key"); // Clear any alternative fallback keys
+
+        // 🎯 STEP 2: Hydrate your global application memory blocks
         dispatch(loginSuccess(data.data.user));
+
+        // 🎯 STEP 3: Finally, switch your UI layouts to display the success screens
         setSubmitted(true);
-        localStorage.removeItem(STORAGE_KEY); // Clean up any lingering fallback local records
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 5000);
+
         addToast(
           "Profile submitted!",
-          "Your details are under review.",
+          "Your details are under review successfully.",
           "success",
-        );
-      } else {
-        setFormError(
-          data.message || "We couldn't submit your profile. Please retry.",
-        );
-        addToast(
-          "Submission failed",
-          data.message || "Please try again.",
-          "error",
         );
       }
     } catch (error) {

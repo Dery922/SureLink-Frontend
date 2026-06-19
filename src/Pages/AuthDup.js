@@ -17,13 +17,13 @@ import {
 import api from "../APIs/api";
 import ProviderOnboarding from "./ProviderOnboardingGate";
 import { useDispatch, useSelector } from "react-redux";
-import SaturnContactMenu from "../components/SaturnContactMenu";
 import {
   loginSuccess,
   loginFailure,
   loginStart,
   setInitializingFalse,
 } from "../redux/features/auth/authSlice";
+import SaturnContactMenu from "../components/SaturnContactMenu";
 
 // ===================== CONSTANTS =====================
 const STEPS = {
@@ -1558,6 +1558,7 @@ const Auth = () => {
           </div>
         </div>
       </div>
+      <SaturnContactMenu />
     </>
   );
 };

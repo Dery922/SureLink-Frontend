@@ -14,29 +14,53 @@ function Navbar() {
   const user = useSelector((state) => state.auth.user);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState("English");
+
+  const languages = ["English", "Twi", "French"];
+
+  const handleLanguageChange = (lang) => {
+    setCurrentLang(lang);
+    setLangDropdownOpen(false);
+
+    // Future i18n logic can go here
+    // i18n.changeLanguage(lang);
+  };
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  console.log(user);
 
-  const mockUser = {
-    name: "Gideon Franklin",
-  };
   const isLoggedIn = isAuthenticated || !!user?.id || !!user?._id;
+  // 🚀 THE FIX: Target user?.name?.full explicitly to match your DevTools database payload!
+  // 🚀 THE BULLETPROOF EXTRACTOR: Safely handles strings, arrays, or empty data structures without throwing errors
+  // 🚀 THE DEFENSIVE EXTRACTOR: Safely reads fields across flat or nested payloads
+  const userFirstName = (() => {
+    if (user?.first && typeof user.first === "string") return user.first;
+    if (user?.firstName && typeof user.firstName === "string")
+      return user.firstName;
+    if (user?.name?.first && typeof user.name.first === "string")
+      return user.name.first;
 
-  const userFirstName =
-    user?.name?.first ||
-    user?.firstName ||
-    (user?.fullName ? user.fullName.split(" ")[0] : "User");
+    const targetFullName = user?.full || user?.fullName || user?.name?.full;
+    if (targetFullName && typeof targetFullName === "string") {
+      const parts = targetFullName.trim().split(" ");
+      if (parts.length > 0) return parts[0]; // Isolate index element string safely
+    }
+
+    return "User";
+  })();
+
   const initialLetter =
-    typeof userFirstName === "string"
+    userFirstName &&
+    typeof userFirstName === "string" &&
+    userFirstName !== "User"
       ? userFirstName.charAt(0).toUpperCase()
       : "U";
 
   const handleLogout = async () => {
     try {
       // 🔑 Fix: Try both common local storage token key names dynamically
-      const token =
-        localStorage.getItem("token") || localStorage.getItem("authToken");
+      const token = localStorage.getItem("authToken");
 
       if (token) {
         // 🚀 Dispatch the POST request with the correctly structured header layout
@@ -58,7 +82,7 @@ function Navbar() {
       );
     } finally {
       // 🧹 ALWAYS RUNS: This guarantees a clean client logout regardless of backend response codes
-      localStorage.removeItem("token");
+
       localStorage.removeItem("authToken");
       localStorage.removeItem("profile_draft_key"); // Wipes lingering wizard draft cache flags
 
@@ -112,105 +136,58 @@ function Navbar() {
           >
             Become a Provider
           </Link>
+          {/* Language Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+              className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#0057FF] transition-colors"
+            >
+              <i className="fa-solid fa-globe text-gray-500"></i>
+
+              <span>{currentLang}</span>
+
+              <i
+                className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${
+                  langDropdownOpen ? "rotate-180" : ""
+                }`}
+              ></i>
+            </button>
+
+            {langDropdownOpen && (
+              <>
+                {/* Overlay */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setLangDropdownOpen(false)}
+                />
+
+                {/* Dropdown */}
+                <div className="absolute right-0 top-12 w-36 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => handleLanguageChange(lang)}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        currentLang === lang
+                          ? "bg-blue-50 text-[#0057FF] font-semibold"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           {isLoggedIn ? (
             /* 👤 Desktop Dropdown Switch Container */
-            <div className="relative flex items-center h-full">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-3 cursor-pointer outline-none select-none group focus:outline-none"
-              >
-                <div className="w-9 h-9 rounded-full bg-[#0057FF] text-white flex items-center justify-center font-bold shadow-sm group-hover:bg-blue-600 transition-colors overflow-hidden">
-                  {user?.avatar?.url ? (
-                    <img
-                      src={user.avatar.url}
-                      className="w-9 h-9 rounded-full object-cover"
-                      alt="Profile"
-                    />
-                  ) : (
-                    initialLetter
-                  )}
-                </div>
-                <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
-                  Hi, {userFirstName}
-                  <i
-                    className={`fa-solid fa-chevron-down text-xs transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
-                  ></i>
-                </span>
-              </button>
-
-              {/* Dropdown Options Cards Overlay Modal Element */}
-              {dropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setDropdownOpen(false)}
-                  />
-
-                  {/* Dropdown Container with Inline Color Gradient */}
-                  <div
-                    style={{
-                      border: "1.5px solid transparent",
-                      backgroundImage:
-                        "linear-gradient(white, white), linear-gradient(to right, #0057FF, #FF9900, #FF3333)",
-                      backgroundOrigin: "border-box",
-                      backgroundClip: "padding-box, border-box",
-                    }}
-                    className="absolute right-0 top-[60px] w-56 bg-white rounded-xl shadow-xl py-2 z-50
-                  before:content-[''] before:absolute before:-top-[6px] before:right-6 before:w-3 before:h-3 before:bg-[#0057FF] before:rotate-45 before:-z-10"
-                  >
-                    {/* Account Type Header */}
-                    <div className="px-4 py-2 border-b border-gray-100 mb-1 bg-white rounded-t-xl relative z-10">
-                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">
-                        Account Type
-                      </p>
-                      <span className="inline-block mt-1 text-xs font-semibold px-2 py-0.5 bg-blue-50 text-[#0057FF] rounded-full capitalize">
-                        {user?.role || "Client"}
-                      </span>
-                    </div>
-
-                    <Link
-                      to={
-                        user?.role === "provider"
-                          ? "/provider/dashboard"
-                          : "/dashboard"
-                      }
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <i className="fa-solid fa-gauge text-gray-400 w-4"></i>
-                      Dashboard
-                    </Link>
-
-                    <Link
-                      to="/profile"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <i className="fa-solid fa-user text-gray-400 w-4"></i>
-                      My Profile
-                    </Link>
-
-                    <Link
-                      to="/settings"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <i className="fa-solid fa-gear text-gray-400 w-4"></i>
-                      Settings
-                    </Link>
-
-                    <hr className="border-gray-100 my-1" />
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50/50 font-medium text-left transition-colors focus:outline-none"
-                    >
-                      <i className="fa-solid fa-arrow-right-from-bracket w-4"></i>
-                      Logout
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            <Link
+              to="/provider-dashbaord"
+              className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
+            >
+              Dashboard
+            </Link>
           ) : (
             <>
               <Link
