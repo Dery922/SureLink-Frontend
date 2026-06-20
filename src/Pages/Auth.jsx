@@ -439,6 +439,7 @@ const Auth = () => {
   const [dark, setDark] = useState(false);
   const [direction, setDirection] = useState("forward");
   const { user } = useSelector((state) => state.auth);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Inside your Auth Component wrapper:
   const dispatch = useDispatch();
@@ -667,10 +668,12 @@ const Auth = () => {
     const identifierError = validateIdentifier(form.identifier);
     setFieldErrors({ identifier: identifierError });
     if (identifierError || !handleNetworkGuard()) return;
+    if (isSubmitting) return; // Stop double-tap requests!
 
     setLoading(true);
     setSlowNetwork(false);
     setGlobalError("");
+    setIsSubmitting(true);
 
     const slowTimer = window.setTimeout(() => setSlowNetwork(true), 1200);
 
@@ -703,6 +706,7 @@ const Auth = () => {
       window.clearTimeout(slowTimer);
       setLoading(false);
       setSlowNetwork(false);
+      setIsSubmitting(false);
     }
   };
 
