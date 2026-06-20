@@ -146,12 +146,16 @@ function ProviderDashboard() {
       {/* Provider Navbar */}
       <nav className="w-full bg-white border-b border-gray-100 fixed top-0 left-0 z-50 h-[72px]">
         <div className="max-w-[1280px] mx-auto px-5 h-full flex items-center justify-between">
-          {/* Logo */}
           <Link
             to="/"
             className="text-[#0057FF] font-bold text-xl tracking-tight"
           >
-            SureLink
+            <img
+              src="/Logo.png"
+              alt="SureLink logo"
+              className="h-20 w-auto ml-4 object-contain"
+              loading="eager"
+            />
           </Link>
 
           {/* Nav links */}

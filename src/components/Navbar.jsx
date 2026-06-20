@@ -213,7 +213,7 @@ function Navbar() {
       <div
         style={{
           backgroundImage:
-            "linear-gradient(to right, #0057FF, #FF9900, #FF3333)",
+            "linear-gradient(to right, #0057FF, #FF9900, #0057FF)",
         }}
         className="w-full h-[2px]"
       />
