@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SubNavbar from "./SubNavbar";
 import { useDispatch } from "react-redux";
@@ -6,6 +6,10 @@ import { loginSuccess, logoutUser } from "../redux/features/auth/authSlice";
 import { useSelector } from "react-redux";
 
 import api from "../APIs/api";
+
+// LocationIQ API configuration
+const LOCATIONIQ_API_KEY =
+  process.env.REACT_APP_LOCATIONIQ_API_KEY || "your_api_key_here";
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -16,6 +20,11 @@ function Navbar() {
 
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("English");
+
+  // 📍 New state for location
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const locationFetched = useRef(false);
 
   const languages = ["English", "Twi", "French"];
 
@@ -31,6 +40,9 @@ function Navbar() {
   const navigate = useNavigate();
 
   const isLoggedIn = isAuthenticated || !!user?.id || !!user?._id;
+  // 🚀 Check if user is a provider
+  const isProvider = user?.role === "provider" || user?.type === "provider";
+
   // 🚀 THE FIX: Target user?.name?.full explicitly to match your DevTools database payload!
   // 🚀 THE BULLETPROOF EXTRACTOR: Safely handles strings, arrays, or empty data structures without throwing errors
   // 🚀 THE DEFENSIVE EXTRACTOR: Safely reads fields across flat or nested payloads
@@ -56,6 +68,59 @@ function Navbar() {
     userFirstName !== "User"
       ? userFirstName.charAt(0).toUpperCase()
       : "U";
+
+  // 📍 Fetch user location using LocationIQ (only for providers)
+  const fetchUserLocation = async () => {
+    if (locationFetched.current) return;
+
+    setLocationLoading(true);
+
+    try {
+      // Get user's IP-based location using LocationIQ
+      const response = await fetch(
+        `https://api.locationiq.com/v1/ip?key=${LOCATIONIQ_API_KEY}&format=json`,
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch location");
+
+      const data = await response.json();
+
+      // Extract city and region from response
+      const location = {
+        city: data.city || data.town || data.village || "Unknown City",
+        state: data.state || data.region || "Unknown Region",
+        country: data.country_name || "Unknown Country",
+      };
+
+      setUserLocation(location);
+      locationFetched.current = true;
+
+      // Store in localStorage for persistence
+      localStorage.setItem("userLocation", JSON.stringify(location));
+    } catch (error) {
+      console.error("❌ Error fetching location:", error);
+
+      // Try to load from localStorage as fallback
+      const savedLocation = localStorage.getItem("userLocation");
+      if (savedLocation) {
+        try {
+          setUserLocation(JSON.parse(savedLocation));
+          locationFetched.current = true;
+        } catch (e) {
+          // Invalid JSON, ignore
+        }
+      }
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  // 🚀 Fetch location when user is a provider and logged in
+  useEffect(() => {
+    if (isLoggedIn && isProvider && !locationFetched.current) {
+      fetchUserLocation();
+    }
+  }, [isLoggedIn, isProvider]);
 
   const handleLogout = async () => {
     try {
@@ -85,12 +150,22 @@ function Navbar() {
 
       localStorage.removeItem("authToken");
       localStorage.removeItem("profile_draft_key"); // Wipes lingering wizard draft cache flags
+      localStorage.removeItem("userLocation"); // Clear location on logout
 
       dispatch(logoutUser()); // Triggers your Redux auth state reset
       setDropdownOpen(false);
       setMenuOpen(false);
       navigate("/"); // Redirects the viewport immediately
     }
+  };
+
+  // 📍 Format location display
+  const getLocationDisplay = () => {
+    if (locationLoading) return "Detecting...";
+    if (userLocation) {
+      return `${userLocation.city}, ${userLocation.state}`;
+    }
+    return "📍 Set Location";
   };
 
   return (
@@ -130,13 +205,25 @@ function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4 lg:gap-6 shrink-0">
-          <Link
-            to="/become-provider"
-            className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors whitespace-nowrap"
-          >
-            Become a Provider
-          </Link>
-          {/* Language Dropdown */}
+          {/* 🔥 ONLY THIS SECTION CHANGED: Dynamic location for providers OR "Become a Provider" */}
+          {isLoggedIn && isProvider ? (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <i className="fa-solid fa-location-dot text-[#0057FF]"></i>
+              <span>{getLocationDisplay()}</span>
+              {locationLoading && (
+                <i className="fa-solid fa-spinner fa-spin text-gray-400 text-xs"></i>
+              )}
+            </div>
+          ) : (
+            <Link
+              to="/become-provider"
+              className="text-sm text-gray-700 hover:text-[#0057FF] transition-colors whitespace-nowrap"
+            >
+              Become a Provider
+            </Link>
+          )}
+
+          {/* Language Dropdown - UNCHANGED */}
           <div className="relative">
             <button
               onClick={() => setLangDropdownOpen(!langDropdownOpen)}
@@ -181,7 +268,7 @@ function Navbar() {
             )}
           </div>
           {isLoggedIn ? (
-            /* 👤 Desktop Dropdown Switch Container */
+            /* 👤 Desktop Dropdown Switch Container - UNCHANGED */
             <Link
               to="/provider-dashbaord"
               className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
@@ -200,7 +287,7 @@ function Navbar() {
           )}
         </div>
 
-        {/* Burger menu — mobile only */}
+        {/* Burger menu — mobile only - UNCHANGED */}
         <button
           className="md:hidden text-gray-700 text-xl"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -209,7 +296,7 @@ function Navbar() {
         </button>
       </div>
 
-      {/* 🌟 3-Color Gradient Divider Line — Explicitly separates Navbar and SubNavbar */}
+      {/* 🌟 3-Color Gradient Divider Line — Explicitly separates Navbar and SubNavbar - UNCHANGED */}
       <div
         style={{
           backgroundImage:
@@ -218,7 +305,7 @@ function Navbar() {
         className="w-full h-[2px]"
       />
 
-      {/* Mobile menu */}
+      {/* Mobile menu - UNCHANGED except location addition */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-5 py-4 flex flex-col gap-4">
           <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2">
@@ -229,9 +316,21 @@ function Navbar() {
               className="bg-transparent outline-none text-sm text-gray-500 w-full"
             />
           </div>
-          <Link to="/become-provider" className="text-sm text-gray-700">
-            Become a Provider
-          </Link>
+
+          {/* 🔥 ONLY THIS SECTION CHANGED in mobile menu */}
+          {isLoggedIn && isProvider ? (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <i className="fa-solid fa-location-dot text-[#0057FF]"></i>
+              <span>{getLocationDisplay()}</span>
+              {locationLoading && (
+                <i className="fa-solid fa-spinner fa-spin text-gray-400 text-xs"></i>
+              )}
+            </div>
+          ) : (
+            <Link to="/become-provider" className="text-sm text-gray-700">
+              Become a Provider
+            </Link>
+          )}
 
           {!isAuthenticated ? (
             <>
@@ -254,6 +353,12 @@ function Navbar() {
                 <span className="text-xs font-medium text-gray-400 capitalize">
                   Role: {user?.role || "Client"}
                 </span>
+                {/* 🔥 Added location display in mobile menu for providers */}
+                {isProvider && userLocation && (
+                  <span className="text-xs text-gray-400">
+                    📍 {userLocation.city}, {userLocation.state}
+                  </span>
+                )}
               </div>
               <Link to="/profile" className="text-sm text-gray-700">
                 My Profile
