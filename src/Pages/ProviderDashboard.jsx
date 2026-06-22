@@ -69,6 +69,7 @@ function ProviderDashboard() {
   const [dropdownOpen, setDropdownOpen] = useState();
   const user = useSelector((state) => state.auth.user);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const [notificationCount, setNotificationCount] = useState(3);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -259,7 +260,7 @@ function ProviderDashboard() {
                   </Link>
 
                   <Link
-                    to="/profile"
+                    to="/provider-onboarding/profile"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
@@ -274,6 +275,21 @@ function ProviderDashboard() {
                   >
                     <i className="fa-solid fa-gear text-gray-400 w-4"></i>
                     Settings
+                  </Link>
+                  <Link
+                    to="/settings"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="relative">
+                      <i className="fa-regular fa-bell text-gray-400 w-4"></i>
+                      {notificationCount > 0 && (
+                        <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+                          {notificationCount > 9 ? "9+" : notificationCount}
+                        </span>
+                      )}
+                    </div>
+                    <span>Notifications</span>
                   </Link>
 
                   <hr className="border-gray-100 my-1" />
@@ -295,7 +311,7 @@ function ProviderDashboard() {
       <div className="max-w-[1280px] mx-auto px-5 py-10">
         {/* Welcome */}
         <h1 className="text-2xl md:text-3xl font-bold text-[#1A1A1A] mb-8">
-          Welcome back, Kwame
+          Welcome back, {userFirstName}
         </h1>
 
         {/* Stat cards */}

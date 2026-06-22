@@ -24,6 +24,8 @@ import {
   loginStart,
   setInitializingFalse,
 } from "../redux/features/auth/authSlice";
+import BulkPurchasingSection from "./BulkPurchasingSection";
+import CookieConsentEnhanced from "../components/CookieConsent";
 
 // ===================== CONSTANTS =====================
 const STEPS = {
@@ -916,6 +918,7 @@ const Auth = () => {
             <Icon name="moon" size={16} />
           )}
         </button>
+        <CookieConsentEnhanced />
 
         <div className="min-h-screen flex flex-col lg:flex-row">
           {/* ===== LEFT - HERO PANEL ===== */}
