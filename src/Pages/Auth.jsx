@@ -918,7 +918,6 @@ const Auth = () => {
             <Icon name="moon" size={16} />
           )}
         </button>
-        <CookieConsentEnhanced />
 
         <div className="min-h-screen flex flex-col lg:flex-row">
           {/* ===== LEFT - HERO PANEL ===== */}
