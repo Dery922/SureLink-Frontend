@@ -67,6 +67,7 @@ const INITIAL_FORM = {
   docSize: "",
   consent: false,
   avatarUrl: "",
+  cover_picture: "",
 };
 
 // ===================== ICONS (inline SVGs) =====================

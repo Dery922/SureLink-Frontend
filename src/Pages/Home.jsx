@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CookieConsentEnhanced from "../components/CookieConsent";
+import TrustMatrix from "../components/TrustMatrix";
+import ComingSoon from "./ComingSoon";
+import PopularServicesToday from "../components/PopulaServices";
 
 const categories = [
   { icon: "fa-wrench", label: "Plumbing", id: "plumbing" },
@@ -152,73 +155,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Providers Section - 1 column on phone */}
-      {/* <section className="bg-[#F5F8FF] py-12 md:py-16">
-        <div className="max-w-[1280px] mx-auto px-5">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl md:text-2xl font-bold text-[#1A1A1A]">
-              Top providers near you
-            </h2>
-            <Link
-              to="/category/all"
-              className="text-sm text-[#0057FF] hover:underline"
-            >
-              See all
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {providers.map((provider) => (
-              <div
-                onClick={() => handleProviderClick(provider.id)}
-                key={provider.id}
-                className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="relative h-[160px]">
-                  <img
-                    src={provider.cover}
-                    alt={provider.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black opacity-20"></div>
-                </div>
-                <div className="p-4 pt-6 relative">
-                  <img
-                    src={provider.avatar}
-                    alt={provider.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4"
-                  />
-                  <h3 className="font-bold text-[15px] text-[#1A1A1A] mt-2">
-                    {provider.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-2">
-                    {provider.service}
-                  </p>
-                  <div className="flex items-center gap-1 mb-1">
-                    {[...Array(5)].map((_, i) => (
-                      <i
-                        key={i}
-                        className={`fa-solid fa-star text-xs ${i < Math.floor(provider.rating) ? "text-[#FF6B00]" : "text-gray-200"}`}
-                      ></i>
-                    ))}
-                    <span className="text-xs text-gray-400 ml-1">
-                      ({provider.reviews} reviews)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 mb-4">
-                    <i className="fa-solid fa-location-dot text-xs text-gray-400"></i>
-                    <span className="text-xs text-gray-400">
-                      {provider.location}
-                    </span>
-                  </div>
-                  <button className="w-full bg-[#0057FF] text-white font-bold text-sm py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
-                    Book Now
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
+      {/* <PopularServicesToday /> */}
 
       <section className="bg-[#F5F8FF] py-12 md:py-16">
         <div className="max-w-[1280px] mx-auto px-5">
@@ -237,7 +174,7 @@ function Home() {
             {providers.map((provider) => (
               <div
                 key={provider.id}
-                className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow group"
+                className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow group relative"
               >
                 <div className="relative h-[160px]">
                   <img
@@ -247,7 +184,7 @@ function Home() {
                   />
                   <div className="absolute inset-0 bg-black opacity-20"></div>
 
-                  {/* 🔥 NEW: Quick view badge on hover */}
+                  {/* Quick view badge on hover */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => {
@@ -260,19 +197,49 @@ function Home() {
                       Quick View
                     </button>
                   </div>
+
+                  {/* Verified Badge - Top Left */}
+                  <div className="absolute top-2 left-2">
+                    <div className="bg-[#00A86B] text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <i className="fa-solid fa-circle-check text-[10px]"></i>
+                      <span>Verified</span>
+                    </div>
+                  </div>
+
+                  {/* Response Time Badge - Bottom Right */}
+                  <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                    <i className="fa-regular fa-clock text-[#0057FF] text-[10px]"></i>
+                    <span className="text-[#1A1A1A]">Responds in 5 mins</span>
+                  </div>
                 </div>
+
                 <div className="p-4 pt-6 relative">
                   <img
                     src={provider.avatar}
                     alt={provider.name}
                     className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4"
                   />
-                  <h3 className="font-bold text-[15px] text-[#1A1A1A] mt-2">
-                    {provider.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-2">
-                    {provider.service}
-                  </p>
+
+                  <div className="flex items-start justify-between mt-2">
+                    <div>
+                      <h3 className="font-bold text-[15px] text-[#1A1A1A]">
+                        {provider.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-2">
+                        {provider.service}
+                      </p>
+                    </div>
+                    {/* Jobs Completed Badge */}
+                    <div className="bg-[#F5F8FF] px-2.5 py-1 rounded-lg text-center flex-shrink-0">
+                      <p className="text-[10px] font-bold text-[#0057FF]">
+                        {provider.jobsCompleted || 147}
+                      </p>
+                      <p className="text-[8px] text-gray-400 leading-none">
+                        Jobs
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-1 mb-1">
                     {[...Array(5)].map((_, i) => (
                       <i
@@ -284,6 +251,7 @@ function Home() {
                       ({provider.reviews} reviews)
                     </span>
                   </div>
+
                   <div className="flex items-center gap-1 mb-4">
                     <i className="fa-solid fa-location-dot text-xs text-gray-400"></i>
                     <span className="text-xs text-gray-400">
@@ -291,7 +259,29 @@ function Home() {
                     </span>
                   </div>
 
-                  {/* 🔥 NEW: Split action buttons */}
+                  {/* Trust Metrics Row */}
+                  <div className="flex items-center justify-between gap-2 mb-4 p-2 bg-[#F5F8FF] rounded-lg">
+                    <div className="flex items-center gap-1.5">
+                      <i className="fa-solid fa-circle-check text-[#00A86B] text-[10px]"></i>
+                      <span className="text-[10px] text-gray-600">
+                        ID Verified
+                      </span>
+                    </div>
+                    <div className="w-px h-4 bg-[#E8F0FF]"></div>
+                    <div className="flex items-center gap-1.5">
+                      <i className="fa-regular fa-briefcase text-[#0057FF] text-[10px]"></i>
+                      <span className="text-[10px] text-gray-600">
+                        {provider.jobsCompleted || 147} jobs
+                      </span>
+                    </div>
+                    <div className="w-px h-4 bg-[#E8F0FF]"></div>
+                    <div className="flex items-center gap-1.5">
+                      <i className="fa-regular fa-clock text-[#FF6B00] text-[10px]"></i>
+                      <span className="text-[10px] text-gray-600">~5 min</span>
+                    </div>
+                  </div>
+
+                  {/* Split action buttons */}
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={(e) => {
@@ -319,35 +309,177 @@ function Home() {
           </div>
         </div>
       </section>
-
+      <ComingSoon />
+      <TrustMatrix />
       {/* How it Works Section */}
-      <section className="bg-white py-12 md:py-16">
+      {/* How It Works Section - Redesigned */}
+      <section className="bg-white py-12 md:py-20">
         <div className="max-w-[1280px] mx-auto px-5">
-          <h2 className="text-xl md:text-2xl font-bold text-[#1A1A1A] text-center mb-10 md:mb-12">
-            How SureLink works
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
-            {steps.map((step, index) => (
+          <div className="text-center mb-12">
+            <span className="bg-[#F5F8FF] text-[#0057FF] text-xs font-bold px-4 py-1.5 rounded-full">
+              Simple & Secure
+            </span>
+            <h2 className="text-2xl md:text-4xl font-bold text-[#1A1A1A] mt-3 mb-3">
+              How <span className="text-[#0057FF]">SureLink</span> works
+            </h2>
+            <p className="text-gray-500 max-w-2xl mx-auto text-sm">
+              Get trusted services in your area with confidence. Here's how it
+              works in 3 simple steps.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative">
+            {/* Connecting line - hidden on mobile */}
+            <div className="hidden md:block absolute top-24 left-1/3 right-1/3 h-0.5 bg-[#E8F0FF] -translate-y-1/2"></div>
+
+            {[
+              {
+                step: 1,
+                icon: "fa-shield-check",
+                title: "Find a verified provider",
+                description:
+                  "Browse trusted professionals in Ghana who are ID-verified, reviewed, and ready to help.",
+                highlights: [
+                  "ID & background verified",
+                  "Real customer reviews",
+                  "Quick response times",
+                ],
+                color: "#0057FF",
+                bgColor: "#F5F8FF",
+              },
+              {
+                step: 2,
+                icon: "fa-comment-dots",
+                title: "Chat or request service",
+                description:
+                  "Send a message, describe your needs, and get a free quote. No commitment required.",
+                highlights: [
+                  "Free quotes instantly",
+                  "No hidden fees",
+                  "Cancel anytime",
+                ],
+                color: "#FF6B00",
+                bgColor: "#FFF5F0",
+              },
+              {
+                step: 3,
+                icon: "fa-lock",
+                title: "Pay securely & review",
+                description:
+                  "Pay safely through our platform and share your experience to help the community.",
+                highlights: [
+                  "Secure payment",
+                  "Your money is protected",
+                  "Build community trust",
+                ],
+                color: "#00A86B",
+                bgColor: "#F0FFF5",
+              },
+            ].map((step, index) => (
               <div
                 key={index}
-                className="flex flex-col items-center text-center"
+                className="relative bg-white border border-[#E8F0FF] rounded-2xl p-6 md:p-8 hover:shadow-lg transition-all hover:-translate-y-1 group"
               >
-                <div className="w-16 h-16 bg-[#E8F0FF] rounded-full flex items-center justify-center mb-5">
-                  <i
-                    className={`fa-solid ${step.icon} text-[#0057FF] text-xl`}
-                  ></i>
+                {/* Step Number */}
+                <div className="absolute -top-3 -left-3 w-8 h-8 bg-[#1A1A1A] text-white text-sm font-bold rounded-full flex items-center justify-center">
+                  {step.step}
                 </div>
-                <h3 className="font-bold text-lg text-[#1A1A1A] mb-2">
+
+                {/* Icon with animated background */}
+                <div className="flex items-center gap-4 mb-4">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+                    style={{ backgroundColor: step.bgColor }}
+                  >
+                    <i
+                      className={`fa-solid ${step.icon}`}
+                      style={{ color: step.color }}
+                    ></i>
+                  </div>
+                  <span
+                    className="text-xs font-bold px-3 py-1 rounded-full"
+                    style={{ backgroundColor: step.bgColor, color: step.color }}
+                  >
+                    Step {step.step}
+                  </span>
+                </div>
+
+                <h3 className="text-lg md:text-xl font-bold text-[#1A1A1A] mb-2">
                   {step.title}
                 </h3>
-                <p className="text-sm text-gray-500 leading-relaxed">
+                <p className="text-sm text-gray-500 leading-relaxed mb-4">
                   {step.description}
                 </p>
+
+                {/* Highlights */}
+                <div className="space-y-1.5">
+                  {step.highlights.map((highlight, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <i
+                        className="fa-solid fa-circle-check text-[10px]"
+                        style={{ color: step.color }}
+                      ></i>
+                      <span className="text-gray-600">{highlight}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Decorative gradient line at bottom */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-1 rounded-b-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ backgroundColor: step.color }}
+                ></div>
               </div>
             ))}
           </div>
+
+          {/* Trust Badge - Additional social proof */}
+          <div className="mt-12 bg-gradient-to-r from-[#F5F8FF] to-white rounded-2xl p-6 md:p-8 border border-[#E8F0FF]">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <i className="fa-solid fa-shield text-[#0057FF]"></i>
+                  <span className="font-bold text-[#1A1A1A]">100%</span>
+                </div>
+                <p className="text-xs text-gray-500">Verified providers</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <i className="fa-regular fa-star text-[#FF6B00]"></i>
+                  <span className="font-bold text-[#1A1A1A]">4.9/5</span>
+                </div>
+                <p className="text-xs text-gray-500">Average rating</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <i className="fa-regular fa-clock text-[#00A86B]"></i>
+                  <span className="font-bold text-[#1A1A1A]">&lt; 5 min</span>
+                </div>
+                <p className="text-xs text-gray-500">Average response</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <i className="fa-regular fa-user text-[#6B46C1]"></i>
+                  <span className="font-bold text-[#1A1A1A]">2,847+</span>
+                </div>
+                <p className="text-xs text-gray-500">Happy customers</p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-8 text-center">
+            <Link
+              to="/category/all"
+              className="inline-flex items-center gap-2 bg-[#0057FF] text-white font-bold px-8 py-3.5 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Find a provider now
+              <i className="fa-solid fa-arrow-right text-sm"></i>
+            </Link>
+          </div>
         </div>
       </section>
+
       <CookieConsentEnhanced />
       <Footer />
     </div>
