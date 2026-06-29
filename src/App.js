@@ -33,6 +33,7 @@ import CustomerOnboarding from "./Pages/CustomerOnboardingGate.jsx";
 import ProviderDashboard from "./Pages/ProviderDashboard.jsx";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.jsx";
 import SaturnContactMenu from "./components/SaturnContactMenu.jsx";
+import ChatWidget from "./components/chat/ChatWidget.jsx";
 
 function App() {
   const [initializing, setInitializing] = useState(true);
@@ -41,6 +42,17 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useSelector((state) => state.auth);
+
+  const excludedPaths = [
+    "/signup",
+    "/login",
+    "/signin",
+    "/reset-password",
+    "/verify-email",
+    "/register",
+    "/get-started",
+  ];
+  const showChat = !excludedPaths.includes(location.pathname);
 
   useEffect(() => {
     // 🚀 THE LIFECYCLE GUARD: Track whether this specific effect execution is still active
@@ -57,6 +69,8 @@ function App() {
       try {
         // Inject authorization token cleanly onto your Axios instance defaults
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        //when the page is refresh call this route which  return the user object
         const res = await api.get("/auth/me");
         if (!isMounted) return;
 
@@ -121,6 +135,7 @@ function App() {
 
   return (
     <div className="App">
+      {showChat && <ChatWidget />}
       <SaturnContactMenu />
       <Routes>
         <Route path="/" element={<Home />} />

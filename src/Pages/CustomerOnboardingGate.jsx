@@ -668,8 +668,6 @@ export default function CustomerOnboarding() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showSaveBadge, setShowSaveBadge] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -771,9 +769,10 @@ export default function CustomerOnboarding() {
     let score = 0;
     if (form.firstName.trim()) score += 15;
     if (form.lastName.trim()) score += 10;
-    if (form.email.trim()) score += 10;
+    //if (form.email.trim()) score += 10;
     if (form.phone.trim()) score += 10;
-    if (form.password.length >= 6) score += 10;
+    //if (form.password.length >= 6) score += 10;
+
     if (form.region) score += 10;
     if (form.city.trim()) score += 10;
     if (form.avatarUrl) score += 10;
@@ -788,8 +787,7 @@ export default function CustomerOnboarding() {
         form.firstName.trim() &&
         form.lastName.trim() &&
         form.email.trim() &&
-        form.phone.trim() &&
-        form.password.length >= 6
+        form.phone.trim()
       ),
       location: !!(form.region && form.city.trim()),
       profile: !!form.avatarUrl,
@@ -803,25 +801,10 @@ export default function CustomerOnboarding() {
     const errs = {};
     if (!form.firstName.trim()) errs.firstName = "First name is required.";
     if (!form.lastName.trim()) errs.lastName = "Last name is required.";
-    if (!form.email.trim()) {
-      errs.email = "Email address is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      errs.email = "Enter a valid email address.";
-    }
     if (!form.phone.trim()) {
       errs.phone = "Phone number is required.";
     } else if (!/^[\d\s+\-()]{7,15}$/.test(form.phone)) {
       errs.phone = "Enter a valid phone number.";
-    }
-    if (!form.password) {
-      errs.password = "Password is required.";
-    } else if (form.password.length < 6) {
-      errs.password = "Password must be at least 6 characters.";
-    }
-    if (!form.confirmPassword) {
-      errs.confirmPassword = "Please confirm your password.";
-    } else if (form.password !== form.confirmPassword) {
-      errs.confirmPassword = "Passwords do not match.";
     }
     setFieldErrors(errs);
     return !Object.keys(errs).length;
@@ -1440,87 +1423,6 @@ export default function CustomerOnboarding() {
                             />
                           </div>
                           {renderFieldError("phone")}
-                        </div>
-
-                        {/* Password */}
-                        <div className="mb-4">
-                          <label
-                            htmlFor="password"
-                            className="mb-1.5 flex items-center gap-1 text-sm font-semibold"
-                          >
-                            Password <span className="text-red-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <Icon
-                              name="lock"
-                              size={16}
-                              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                            />
-                            <input
-                              id="password"
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Minimum 6 characters"
-                              value={form.password}
-                              disabled={loading}
-                              onChange={(e) =>
-                                updateField("password", e.target.value)
-                              }
-                              className={`${inputIconClass} pr-10 ${fieldErrors.password ? "!border-red-400 dark:!border-red-500" : ""}`}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
-                            >
-                              <Icon
-                                name={showPassword ? "x" : "info"}
-                                size={16}
-                              />
-                            </button>
-                          </div>
-                          {renderFieldError("password")}
-                        </div>
-
-                        {/* Confirm Password */}
-                        <div>
-                          <label
-                            htmlFor="confirmPassword"
-                            className="mb-1.5 block text-sm font-semibold"
-                          >
-                            Confirm password{" "}
-                            <span className="text-red-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <Icon
-                              name="lock"
-                              size={16}
-                              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                            />
-                            <input
-                              id="confirmPassword"
-                              type={showConfirmPassword ? "text" : "password"}
-                              placeholder="Re-enter your password"
-                              value={form.confirmPassword}
-                              disabled={loading}
-                              onChange={(e) =>
-                                updateField("confirmPassword", e.target.value)
-                              }
-                              className={`${inputIconClass} pr-10 ${fieldErrors.confirmPassword ? "!border-red-400 dark:!border-red-500" : ""}`}
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setShowConfirmPassword(!showConfirmPassword)
-                              }
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
-                            >
-                              <Icon
-                                name={showConfirmPassword ? "x" : "info"}
-                                size={16}
-                              />
-                            </button>
-                          </div>
-                          {renderFieldError("confirmPassword")}
                         </div>
                       </div>
                     </section>

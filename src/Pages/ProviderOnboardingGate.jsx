@@ -67,7 +67,8 @@ const INITIAL_FORM = {
   docSize: "",
   consent: false,
   avatarUrl: "",
-  cover_picture: "",
+  businessName: "",
+  coverPicture: "",
 };
 
 // ===================== ICONS (inline SVGs) =====================
@@ -662,6 +663,7 @@ export default function ProviderOnboarding() {
   const docInputRef = useRef(null);
   const autoSaveTimerRef = useRef(null);
   const navScrollRef = useRef(false);
+  const coverInputRef = useRef(null);
 
   // ===================== EFFECTS =====================
   useEffect(() => {
@@ -761,10 +763,12 @@ export default function ProviderOnboarding() {
     let score = 0;
     if (form.category) score += 20;
     if (form.area.trim()) score += 15;
-    if (form.bio.trim().length >= 40) score += 20;
+    if (form.businessName.trim()) score += 10;
+    if (form.bio.trim().length >= 40) score += 10;
     if (form.idType && form.idNumber.trim().length >= 6) score += 20;
-    if (form.docName) score += 10;
-    if (form.avatarUrl) score += 10;
+    if (form.docName) score += 5;
+    if (form.avatarUrl) score += 5;
+    if (form.coverPicture) score += 10;
     if (form.basePrice) score += 5;
     return Math.min(score, 100);
   }, [form]);
@@ -795,6 +799,8 @@ export default function ProviderOnboarding() {
     if (!form.category)
       errs.category = "Please select a primary service category.";
     if (!form.area?.trim()) errs.area = "Service operational area is required.";
+    if (!form.businessName.trim())
+      errs.businessName = "Please business name is required.";
     if (!form.bio || form.bio.trim().length < 40) {
       errs.bio = "Bio must be at least 40 characters long.";
     }
@@ -975,16 +981,6 @@ export default function ProviderOnboarding() {
   }, []);
 
   // ===================== SAVE DRAFT =====================
-  // const handleSaveDraft = useCallback(() => {
-  //   try {
-  //     localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
-  //     addToast("Draft saved", "Your progress has been saved locally.", "success");
-  //     setShowSaveBadge(true);
-  //     setTimeout(() => setShowSaveBadge(false), 3000);
-  //   } catch {
-  //     addToast("Save failed", "Could not save draft to local storage.", "error");
-  //   }
-  // }, [form, addToast]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
@@ -1109,6 +1105,18 @@ export default function ProviderOnboarding() {
     },
     [handleDocUpload],
   );
+
+  const handleCoverChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Update your form state with the cover URL
+        setForm({ ...form, coverPicture: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const removeDoc = useCallback(() => {
     updateField("docName", "");
@@ -1556,7 +1564,58 @@ export default function ProviderOnboarding() {
                         </div>
                       </div>
 
-                      <div className="mb-4 grid gap-4 sm:grid-cols-2">
+                      {/* Cover Photo Section */}
+                      {/* Cover Photo Section - Full Width Banner */}
+                      <div className="space-y-2 mb-6">
+                        <div
+                          className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100 cursor-pointer group"
+                          onClick={() => coverInputRef.current?.click()}
+                        >
+                          {form.coverPicture ? (
+                            <img
+                              src={form.coverPicture}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              alt="Cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+                              <Icon
+                                name="image"
+                                size={40}
+                                className="text-gray-400"
+                              />
+                            </div>
+                          )}
+                          <div className="cover-overlay absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex flex-col items-center gap-2">
+                              <Icon
+                                name="camera"
+                                size={24}
+                                className="text-white"
+                              />
+                              <span className="text-white text-sm font-medium">
+                                Upload Cover Photo
+                              </span>
+                            </div>
+                          </div>
+                          <input
+                            type="file"
+                            ref={coverInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleCoverChange}
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-semibold">Cover photo</p>
+                          <p className="text-xs text-gray-500">
+                            A banner image for your profile
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Name Fields - Increased top margin for better spacing */}
+                      <div className="mb-4 grid gap-4 sm:grid-cols-2 mt-8">
                         {/* First Name Input */}
                         <div>
                           <label
@@ -1706,6 +1765,57 @@ export default function ProviderOnboarding() {
                             <option value="50">50 km</option>
                           </select>
                         </div>
+                      </div>
+
+                      {/* business_name */}
+
+                      <div className="mb-4">
+                        <label
+                          htmlFor="businessName"
+                          className="mb-1.5 flex items-center gap-1 text-sm font-semibold"
+                        >
+                          Business Name <span className="text-red-500">*</span>
+                          <span className="tooltip-trigger relative">
+                            <Icon
+                              name="info"
+                              size={14}
+                              className="text-gray-400 cursor-help"
+                            />
+                            <span className="tooltip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-lg bg-gray-800 dark:bg-gray-700 text-white text-xs p-2 shadow-lg z-10">
+                              Enter the registered or official name of your
+                              business. This appears on your public profile.
+                            </span>
+                          </span>
+                        </label>
+                        <input
+                          type="text"
+                          id="businessName"
+                          maxLength={100}
+                          value={form.businessName || ""}
+                          disabled={loading}
+                          onChange={(e) =>
+                            updateField("businessName", e.target.value)
+                          }
+                          placeholder="e.g. Acme Enterprise Group"
+                          className={`${inputClass} ${fieldErrors.businessName ? "!border-red-400 dark:!border-red-500" : ""}`}
+                        />
+                        <div className="mt-1 flex justify-between text-xs">
+                          <span className="text-gray-400">
+                            Minimum 2 characters
+                          </span>
+                          <span
+                            className={`${
+                              (form.businessName?.length || 0) < 2
+                                ? "text-red-500"
+                                : (form.businessName?.length || 0) < 5
+                                  ? "text-amber-500"
+                                  : "text-emerald-500"
+                            }`}
+                          >
+                            {form.businessName?.length || 0}/100
+                          </span>
+                        </div>
+                        {renderFieldError("businessName")}
                       </div>
 
                       {/* Bio */}

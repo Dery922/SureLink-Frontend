@@ -5,6 +5,11 @@ import CookieConsentEnhanced from "../components/CookieConsent";
 import TrustMatrix from "../components/TrustMatrix";
 import ComingSoon from "./ComingSoon";
 import PopularServicesToday from "../components/PopulaServices";
+import { useSelector } from "react-redux";
+import axios from "axios";
+import { getAllProviders } from "../services/services";
+import { useState, useEffect } from "react";
+import { mockProvidersList } from "../mockMainData";
 
 const categories = [
   { icon: "fa-wrench", label: "Plumbing", id: "plumbing" },
@@ -17,7 +22,7 @@ const categories = [
   { icon: "fa-ellipsis", label: "More", id: "all" },
 ];
 
-const providers = [
+const providerss = [
   {
     id: 1,
     name: "Kwame Mensah",
@@ -90,6 +95,53 @@ const steps = [
 ];
 
 function Home() {
+  //states variables here
+  const user = useSelector((state) => state.user);
+  const [providers, setProviders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  //all useEffects here
+
+  useEffect(() => {
+    async function fetchTopProviders() {
+      try {
+        setLoading(true);
+        setError(null); // Clear previous errors on retry
+
+        const result = await getAllProviders();
+
+        console.log("🔍 Live backend response dataset:", result);
+
+        if (result && result.success && Array.isArray(result.data)) {
+          setProviders(result.data);
+        } else if (
+          result &&
+          result.success &&
+          Array.isArray(result.data?.users)
+        ) {
+          setProviders(result.data.users);
+        } else {
+          // Handle unexpected success payload format
+          throw new Error("Invalid response format received from registry.");
+        }
+      } catch (error) {
+        console.error(
+          "❌ Failed to load providers from backend registry:",
+          error,
+        );
+        // Set the error message so the UI knows the server is down
+        setError(
+          "Unable to connect to the server. Please check your network or server status.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTopProviders();
+  }, []);
+
+  //all functions here
   const handleProviderClick = (providerId) => {
     window.location.href = `/provider/${providerId}`;
   };
@@ -97,6 +149,7 @@ function Home() {
     window.location.href = `/provider/${providerId}`;
   };
   const handleBookNow = () => {};
+  const handleChatNow = () => {};
   return (
     <div className="bg-white min-h-screen">
       <Navbar />
@@ -170,143 +223,233 @@ function Home() {
               See all
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {providers.map((provider) => (
-              <div
-                key={provider.id}
-                className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow group relative"
-              >
-                <div className="relative h-[160px]">
-                  <img
-                    src={provider.cover}
-                    alt={provider.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black opacity-20"></div>
+          {loading ? (
+            /* Tailwind Skeleton Loader Grid matching the card structure */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm animate-pulse"
+                >
+                  {/* Banner Image Skeleton */}
+                  <div className="h-[160px] bg-gray-200" />
 
-                  {/* Quick view badge on hover */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleProviderClick(provider.id);
-                      }}
-                      className="bg-white/90 backdrop-blur-sm text-gray-700 text-xs px-3 py-1.5 rounded-full hover:bg-white transition shadow-sm"
-                    >
-                      <i className="fa-regular fa-eye mr-1"></i>
-                      Quick View
-                    </button>
-                  </div>
+                  <div className="p-4 pt-6 relative">
+                    {/* Avatar Skeleton */}
+                    <div className="w-12 h-12 rounded-full bg-gray-300 border-2 border-white absolute -top-6 left-4" />
 
-                  {/* Verified Badge - Top Left */}
-                  <div className="absolute top-2 left-2">
-                    <div className="bg-[#00A86B] text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <i className="fa-solid fa-circle-check text-[10px]"></i>
-                      <span>Verified</span>
+                    {/* Title & Price Row Skeleton */}
+                    <div className="flex items-start justify-between mt-2 mb-4">
+                      <div className="space-y-2 w-2/3">
+                        <div className="h-4 bg-gray-200 rounded w-full" />
+                        <div className="h-3 bg-gray-200 rounded w-1/2" />
+                      </div>
+                      <div className="h-8 bg-gray-100 rounded-lg w-14 flex-shrink-0" />
                     </div>
-                  </div>
 
-                  {/* Response Time Badge - Bottom Right */}
-                  <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                    <i className="fa-regular fa-clock text-[#0057FF] text-[10px]"></i>
-                    <span className="text-[#1A1A1A]">Responds in 5 mins</span>
+                    {/* Ratings & Location Skeleton */}
+                    <div className="space-y-2 mb-4">
+                      <div className="h-3 bg-gray-200 rounded w-1/3" />
+                      <div className="h-3 bg-gray-200 rounded w-1/4" />
+                    </div>
+
+                    {/* Trust Metrics Row Skeleton */}
+                    <div className="h-8 bg-[#F5F8FF] rounded-lg mb-4" />
+
+                    {/* Action Buttons Skeleton */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="col-span-2 h-10 bg-gray-200 rounded-lg" />
+                      <div className="h-10 bg-gray-200 rounded-lg" />
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : (
+            /* Original Data Grid Layout */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {mockProvidersList.data.map((provider) => {
+                // 1. Safely resolve MongoDB dynamic ID references
+                const providerId = provider._id || provider.id;
 
-                <div className="p-4 pt-6 relative">
-                  <img
-                    src={provider.avatar}
-                    alt={provider.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4"
-                  />
+                // 2. Safely capture names to fix the Object rendering crash
+                const displayName =
+                  provider.business_profile?.businessName ||
+                  provider.name?.full ||
+                  `${provider.name?.first || ""} ${provider.name?.last || ""}`.trim() ||
+                  "Professional Provider";
 
-                  <div className="flex items-start justify-between mt-2">
-                    <div>
-                      <h3 className="font-bold text-[15px] text-[#1A1A1A]">
-                        {provider.name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mb-2">
-                        {provider.service}
-                      </p>
+                // 3. Fallbacks for images matching your Cloudinary / Schema structure
+                const coverUrl =
+                  provider.coverPicture?.url ||
+                  provider.provider_profile?.cover_picture ||
+                  "https://unsplash.com";
+
+                const avatarUrl =
+                  provider.avatar?.url ||
+                  provider.provider_profile?.avatar_url ||
+                  "https://flaticon.com";
+
+                // 4. Fallbacks for specific service metrics
+                const serviceCategory =
+                  provider.provider_profile?.category || "General Services";
+                const serviceCity =
+                  provider.business_profile?.address?.city ||
+                  provider.location?.home_address?.city ||
+                  "Accra";
+
+                const basePrice = provider.provider_profile?.base_price || 0;
+                const completedJobs =
+                  provider.provider_profile?.experience_years || 0; // Swap out with completed jobs if tracked later
+
+                return (
+                  <div
+                    key={providerId}
+                    className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm hover:shadow-md transition-shadow group relative"
+                  >
+                    <div className="relative h-[160px]">
+                      <img
+                        src={coverUrl}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black opacity-20"></div>
+
+                      {/* Quick view badge on hover */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProviderClick(providerId);
+                          }}
+                          className="bg-white/90 backdrop-blur-sm text-gray-700 text-xs px-3 py-1.5 rounded-full hover:bg-white transition shadow-sm"
+                        >
+                          <i className="fa-regular fa-eye mr-1"></i>
+                          Quick View
+                        </button>
+                      </div>
+
+                      {/* Verified Badge - Top Left */}
+                      <div className="absolute top-2 left-2">
+                        <div className="bg-[#00A86B] text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                          <i className="fa-solid fa-circle-check text-[10px]"></i>
+                          <span>
+                            {provider.status === "verified"
+                              ? "Verified"
+                              : "Active"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Response Time Badge - Bottom Right */}
+                      <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                        <i className="fa-regular fa-clock text-[#0057FF] text-[10px]"></i>
+                        <span className="text-[#1A1A1A]">Responds fast</span>
+                      </div>
                     </div>
-                    {/* Jobs Completed Badge */}
-                    <div className="bg-[#F5F8FF] px-2.5 py-1 rounded-lg text-center flex-shrink-0">
-                      <p className="text-[10px] font-bold text-[#0057FF]">
-                        {provider.jobsCompleted || 147}
-                      </p>
-                      <p className="text-[8px] text-gray-400 leading-none">
-                        Jobs
-                      </p>
+
+                    <div className="p-4 pt-6 relative">
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4"
+                      />
+
+                      <div className="flex items-start justify-between mt-2">
+                        <div>
+                          <h3 className="font-bold text-[15px] text-[#1A1A1A] line-clamp-1">
+                            {displayName}
+                          </h3>
+                          <p className="text-sm text-gray-500 mb-2 capitalize">
+                            {serviceCategory}
+                          </p>
+                        </div>
+                        {/* Base Price Badge */}
+                        <div className="bg-[#F5F8FF] px-2.5 py-1 rounded-lg text-center flex-shrink-0">
+                          <p className="text-[10px] font-bold text-[#0057FF]">
+                            GHS {basePrice}
+                          </p>
+                          <p className="text-[8px] text-gray-400 leading-none mt-0.5">
+                            Base
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 mb-1">
+                        {[...Array(5)].map((_, i) => (
+                          <i
+                            key={i}
+                            className={`fa-solid fa-star text-xs ${
+                              i <
+                              Math.floor(provider.trust?.average_rating || 5)
+                                ? "text-[#FF6B00]"
+                                : "text-gray-200"
+                            }`}
+                          ></i>
+                        ))}
+                        <span className="text-xs text-gray-400 ml-1">
+                          ({provider.trust?.total_ratings || 0} reviews)
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 mb-4">
+                        <i className="fa-solid fa-location-dot text-xs text-gray-400"></i>
+                        <span className="text-xs text-gray-400">
+                          {serviceCity}
+                        </span>
+                      </div>
+
+                      {/* Trust Metrics Row */}
+                      <div className="flex items-center justify-between gap-2 mb-4 p-2 bg-[#F5F8FF] rounded-lg">
+                        <div className="flex items-center gap-1.5">
+                          <i className="fa-solid fa-circle-check text-[#00A86B] text-[10px]"></i>
+                          <span className="text-[10px] text-gray-600">
+                            ID Verified
+                          </span>
+                        </div>
+                        <div className="w-px h-4 bg-[#E8F0FF]"></div>
+                        <div className="flex items-center gap-1.5">
+                          <i className="fa-regular fa-briefcase text-[#0057FF] text-[10px]"></i>
+                          <span className="text-[10px] text-gray-600">
+                            {completedJobs} yrs exp
+                          </span>
+                        </div>
+                        <div className="w-px h-4 bg-[#E8F0FF]"></div>
+                        <div className="flex items-center gap-1.5">
+                          <i className="fa-regular fa-clock text-[#FF6B00] text-[10px]"></i>
+                          <span className="text-[10px] text-gray-600">
+                            ⚡ Fast
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Split action buttons */}
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookNow(providerId);
+                          }}
+                          className="col-span-2 bg-[#0057FF] text-white font-bold text-sm py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Book Now
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChatNow(providerId);
+                          }}
+                          className="bg-gray-100 text-gray-700 font-bold text-sm py-2.5 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          Chat
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-1 mb-1">
-                    {[...Array(5)].map((_, i) => (
-                      <i
-                        key={i}
-                        className={`fa-solid fa-star text-xs ${i < Math.floor(provider.rating) ? "text-[#FF6B00]" : "text-gray-200"}`}
-                      ></i>
-                    ))}
-                    <span className="text-xs text-gray-400 ml-1">
-                      ({provider.reviews} reviews)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 mb-4">
-                    <i className="fa-solid fa-location-dot text-xs text-gray-400"></i>
-                    <span className="text-xs text-gray-400">
-                      {provider.location}
-                    </span>
-                  </div>
-
-                  {/* Trust Metrics Row */}
-                  <div className="flex items-center justify-between gap-2 mb-4 p-2 bg-[#F5F8FF] rounded-lg">
-                    <div className="flex items-center gap-1.5">
-                      <i className="fa-solid fa-circle-check text-[#00A86B] text-[10px]"></i>
-                      <span className="text-[10px] text-gray-600">
-                        ID Verified
-                      </span>
-                    </div>
-                    <div className="w-px h-4 bg-[#E8F0FF]"></div>
-                    <div className="flex items-center gap-1.5">
-                      <i className="fa-regular fa-briefcase text-[#0057FF] text-[10px]"></i>
-                      <span className="text-[10px] text-gray-600">
-                        {provider.jobsCompleted || 147} jobs
-                      </span>
-                    </div>
-                    <div className="w-px h-4 bg-[#E8F0FF]"></div>
-                    <div className="flex items-center gap-1.5">
-                      <i className="fa-regular fa-clock text-[#FF6B00] text-[10px]"></i>
-                      <span className="text-[10px] text-gray-600">~5 min</span>
-                    </div>
-                  </div>
-
-                  {/* Split action buttons */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBookNow(provider.id);
-                      }}
-                      className="col-span-2 bg-[#0057FF] text-white font-bold text-sm py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Book Now
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewProfile(provider.id);
-                      }}
-                      className="col-span-1 bg-gray-50 text-[#0057FF] font-medium text-sm py-2.5 rounded-lg hover:bg-gray-100 transition-colors border border-[#E8F0FF] flex items-center justify-center gap-1"
-                    >
-                      <i className="fa-regular fa-user text-xs"></i>
-                      <span className="hidden sm:inline">Profile</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
       <ComingSoon />
