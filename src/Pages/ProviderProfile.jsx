@@ -13,6 +13,108 @@ function ProviderProfile() {
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [galleryFilter, setGalleryFilter] = useState("all");
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Mock gallery data for testing
+  const mockGallery = [
+    {
+      _id: "1",
+      title: "Modern Kitchen Renovation",
+      category: "Kitchen",
+      description:
+        "Complete kitchen remodel with custom cabinets and quartz countertops",
+      url: "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800&q=80",
+      },
+    },
+    {
+      _id: "2",
+      title: "Bathroom Remodel",
+      category: "Bathroom",
+      description:
+        "Luxury bathroom renovation with walk-in shower and modern fixtures",
+      url: "https://images.unsplash.com/photo-1552321554-5fef8c9d4bf6?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1552321554-5fef8c9d4bf6?w=800&q=80",
+      },
+    },
+    {
+      _id: "3",
+      title: "Living Room Design",
+      category: "Interior",
+      description:
+        "Contemporary living room with custom furniture and accent wall",
+      url: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800&q=80",
+      },
+    },
+    {
+      _id: "4",
+      title: "Exterior Painting",
+      category: "Exterior",
+      description: "Complete exterior painting with modern color scheme",
+      url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80",
+      },
+    },
+    {
+      _id: "5",
+      title: "Deck Installation",
+      category: "Outdoor",
+      description: "Custom wooden deck with integrated lighting and seating",
+      url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+      },
+    },
+    {
+      _id: "6",
+      title: "Office Renovation",
+      category: "Interior",
+      description: "Modern office space with open concept and natural lighting",
+      url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+      },
+    },
+    {
+      _id: "7",
+      title: "Kitchen Backsplash",
+      category: "Kitchen",
+      description:
+        "Custom tile backsplash installation with herringbone pattern",
+      url: "https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=800&q=80",
+      },
+    },
+    {
+      _id: "8",
+      title: "Landscaping Project",
+      category: "Outdoor",
+      description:
+        "Complete landscape design with native plants and water feature",
+      url: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=80",
+      },
+    },
+    {
+      _id: "9",
+      title: "Master Bedroom Suite",
+      category: "Interior",
+      description: "Luxurious master bedroom with custom closet and ensuite",
+      url: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80",
+      image: {
+        url: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80",
+      },
+    },
+  ];
 
   // Fetch provider data when component mounts or id changes
   useEffect(() => {
@@ -26,20 +128,13 @@ function ProviderProfile() {
       try {
         setLoading(true);
         setError(null);
-
-        // Call your existing API function
         const response = await getProviderById(id);
 
-        // Handle different response structures
-        // If your API returns data directly or inside a data property
-        // const providerData = response?.data || response;
+        // Add mock gallery data for testing
+        const providerData = response.data;
+        providerData.gallery = mockGallery;
 
-        // if (!providerData) {
-        //   throw new Error("Provider not found");
-        // }
-
-        //setProvider(providerData);
-        setProvider(response.data);
+        setProvider(providerData);
         console.log("this is mobdata", response);
       } catch (err) {
         console.error("Error fetching provider:", err);
@@ -75,6 +170,23 @@ function ProviderProfile() {
       }
     }
     return stars;
+  };
+
+  // Get unique categories from gallery items
+  const getGalleryCategories = () => {
+    if (!provider?.gallery || provider.gallery.length === 0) return [];
+    const categories = new Set();
+    provider.gallery.forEach((item) => {
+      if (item.category) categories.add(item.category);
+    });
+    return ["all", ...Array.from(categories)];
+  };
+
+  // Filter gallery items
+  const getFilteredGallery = () => {
+    if (!provider?.gallery) return [];
+    if (galleryFilter === "all") return provider.gallery;
+    return provider.gallery.filter((item) => item.category === galleryFilter);
   };
 
   // Loading state
@@ -398,6 +510,110 @@ function ProviderProfile() {
                     )}
                   </div>
 
+                  {/* Work Gallery Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-bold text-[#1A1A1A]">
+                        Work Gallery
+                      </h2>
+                      {provider.gallery && provider.gallery.length > 0 && (
+                        <span className="text-sm text-gray-400">
+                          {provider.gallery.length} photos
+                        </span>
+                      )}
+                    </div>
+
+                    {!provider.gallery || provider.gallery.length === 0 ? (
+                      <div className="bg-gray-50 rounded-2xl p-8 text-center border-2 border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <i className="fa-regular fa-images text-2xl text-gray-400"></i>
+                        </div>
+                        <p className="text-gray-400 text-sm font-medium">
+                          No work gallery available
+                        </p>
+                        <p className="text-xs text-gray-300 mt-1">
+                          This provider hasn't uploaded any work samples yet
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        {/* Gallery Filter */}
+                        {getGalleryCategories().length > 1 && (
+                          <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-100">
+                            {getGalleryCategories().map((category) => (
+                              <button
+                                key={category}
+                                onClick={() => setGalleryFilter(category)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-medium capitalize transition-all ${
+                                  galleryFilter === category
+                                    ? "bg-[#0057FF] text-white shadow-lg shadow-[#0057FF]/25"
+                                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                                }`}
+                              >
+                                {category === "all" ? "All Work" : category}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Gallery Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {getFilteredGallery().map((item, index) => (
+                            <div
+                              key={item._id || index}
+                              className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer bg-gray-100"
+                              onClick={() => {
+                                setSelectedImage(item);
+                                setIsLightboxOpen(true);
+                              }}
+                            >
+                              <img
+                                src={item.image?.url || item.url || item}
+                                alt={item.title || `Work sample ${index + 1}`}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                onError={(e) => {
+                                  e.target.src =
+                                    "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&q=80";
+                                }}
+                              />
+
+                              {/* Overlay on hover */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div className="absolute bottom-0 left-0 right-0 p-3">
+                                  {item.title && (
+                                    <p className="text-white text-sm font-medium truncate">
+                                      {item.title}
+                                    </p>
+                                  )}
+                                  {item.category && (
+                                    <p className="text-white/70 text-xs truncate">
+                                      {item.category}
+                                    </p>
+                                  )}
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <span className="text-white/70 text-xs">
+                                      <i className="fa-regular fa-eye mr-1"></i>
+                                      View
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Category badge */}
+                              {item.category && (
+                                <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                                  <span className="text-white text-[10px] font-medium">
+                                    {item.category}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-gradient-to-br from-[#F5F8FF] to-white rounded-2xl p-5 text-center border border-[#E8F0FF]">
@@ -426,11 +642,9 @@ function ProviderProfile() {
                     </div>
                     <div className="bg-gradient-to-br from-[#F5F8FF] to-white rounded-2xl p-5 text-center border border-[#E8F0FF]">
                       <p className="text-2xl font-bold text-[#0057FF]">
-                        {provider.services?.length || 0}
+                        {provider.gallery?.length || 0}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Services Offered
-                      </p>
+                      <p className="text-xs text-gray-500 mt-1">Work Samples</p>
                     </div>
                   </div>
 
@@ -702,6 +916,65 @@ function ProviderProfile() {
           </div>
         </div>
       </div>
+
+      {/* Lightbox Modal */}
+      {isLightboxOpen && selectedImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => {
+            setIsLightboxOpen(false);
+            setSelectedImage(null);
+          }}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full">
+            <button
+              className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors text-2xl"
+              onClick={() => {
+                setIsLightboxOpen(false);
+                setSelectedImage(null);
+              }}
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+
+            <div className="bg-white rounded-2xl overflow-hidden">
+              <img
+                src={
+                  selectedImage.image?.url || selectedImage.url || selectedImage
+                }
+                alt={selectedImage.title || "Work sample"}
+                className="w-full h-auto max-h-[70vh] object-contain"
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80";
+                }}
+              />
+
+              {(selectedImage.title ||
+                selectedImage.category ||
+                selectedImage.description) && (
+                <div className="p-4 bg-white">
+                  {selectedImage.title && (
+                    <h3 className="font-bold text-[#1A1A1A] text-lg">
+                      {selectedImage.title}
+                    </h3>
+                  )}
+                  {selectedImage.category && (
+                    <p className="text-sm text-[#0057FF] font-medium">
+                      {selectedImage.category}
+                    </p>
+                  )}
+                  {selectedImage.description && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {selectedImage.description}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

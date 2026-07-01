@@ -34,6 +34,7 @@ import ProviderDashboard from "./Pages/ProviderDashboard.jsx";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.jsx";
 import SaturnContactMenu from "./components/SaturnContactMenu.jsx";
 import ChatWidget from "./components/chat/ChatWidget.jsx";
+import ManageProfile from "./Pages/ManageProfile.jsx";
 
 function App() {
   const [initializing, setInitializing] = useState(true);
@@ -144,6 +145,10 @@ function App() {
         <Route path="/signin" element={<Auth />} />
         <Route path="/get-started" element={<Auth />} />
         <Route path="/provider/:id" element={<ProviderProfile />} />
+        <Route
+          path="/provider/manage/profile-page"
+          element={<ManageProfile />}
+        />
         <Route
           path="/become-provider"
           element={<Navigate to="/provider-onboarding/profile" replace />}

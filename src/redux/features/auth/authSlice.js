@@ -1,4 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { getCurrentUser, updateCurrentUser } from "../../../services/services";
 
 // 🚀 STEP 1: Read browser storage immediately during file compilation
 const preservedToken =
@@ -29,6 +30,31 @@ const initialState = {
   loading: false, // Turn off by default since cache handles the initial paint
   error: null,
 };
+
+//thunk to fetch current login user
+export const fetchCurrentUser = createAsyncThunk(
+  "auth/fetchCurrentUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await getCurrentUser();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  },
+);
+
+export const updateUserProfile = createAsyncThunk(
+  "auth/updateUserProfile",
+  async (updateData, { rejectWithValue }) => {
+    try {
+      const response = await updateCurrentUser(updateData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  },
+);
 
 const authSlice = createSlice({
   name: "auth",
@@ -68,6 +94,51 @@ const authSlice = createSlice({
     setInitializingFalse: (state) => {
       state.loading = false;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch current user
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.user = {
+          ...action.payload,
+          id: action.payload.id || action.payload._id,
+          role: action.payload.role || action.payload.type || "customer",
+          type: action.payload.type || action.payload.role || "customer",
+        };
+        localStorage.setItem("user", JSON.stringify(state.user));
+      })
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.error = action.payload;
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      })
+      // Update user profile
+      .addCase(updateUserProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = {
+          ...state.user,
+          ...action.payload,
+        };
+        localStorage.setItem("user", JSON.stringify(state.user));
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 
