@@ -4,6 +4,7 @@ import SubNavbar from "./SubNavbar";
 import { useDispatch } from "react-redux";
 import { loginSuccess, logoutUser } from "../redux/features/auth/authSlice";
 import { useSelector } from "react-redux";
+import SearchSection from "./SeachSection";
 
 import api from "../APIs/api";
 
@@ -13,6 +14,7 @@ const LOCATIONIQ_API_KEY =
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState();
   const user = useSelector((state) => state.auth.user);
@@ -168,6 +170,13 @@ function Navbar() {
     return "📍 Set Location";
   };
 
+  // Handle search from the new component
+  const handleSearch = (query, tags) => {
+    console.log("Searching for:", query, "with tags:", tags);
+    // You can implement additional search logic here
+    // The navigation already happens in the SearchSection component
+  };
+
   return (
     <nav className="w-full bg-white fixed top-0 left-0 z-50">
       {/* Main Navbar Core Contents */}
@@ -185,27 +194,22 @@ function Navbar() {
           />
         </Link>
 
-        {/* Search bar — hidden on mobile */}
+        {/* Search bar — REDESIGNED with click trigger */}
         <div
-          className={`hidden md:flex items-center border rounded-full px-4 py-2 w-[400px] lg:w-[480px] transition-all relative ${
-            isSearchFocused
-              ? "bg-white border-[#0057FF] shadow-lg z-50"
-              : "bg-gray-50 border-gray-200 z-50"
-          }`}
+          className="hidden md:flex items-center border rounded-full px-4 py-2 w-[400px] lg:w-[480px] transition-all bg-gray-50 border-gray-200 hover:border-[#0057FF] hover:bg-white cursor-pointer group search-trigger"
+          onClick={() => setSearchOpen(true)}
         >
-          <i className="fa-solid fa-magnifying-glass text-gray-400 text-sm mr-3"></i>
-          <input
-            type="text"
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => setTimeout(() => setIsSearchFocused(false), 150)}
-            placeholder="What service do you need?"
-            className="bg-transparent outline-none text-sm text-gray-500 w-full"
-          />
+          <i className="fa-solid fa-magnifying-glass text-gray-400 text-sm mr-3 group-hover:text-[#0057FF]"></i>
+          <span className="text-sm text-gray-400 flex-1">
+            What service do you need?
+          </span>
+          <kbd className="hidden lg:inline-block px-2 py-0.5 bg-gray-100 border border-gray-200 rounded text-xs text-gray-400 font-mono">
+            ⌘K
+          </kbd>
           <i className="fa-solid fa-location-dot text-gray-400 text-sm ml-3"></i>
         </div>
 
         <div className="hidden md:flex items-center gap-4 lg:gap-6 shrink-0">
-          {/* 🔥 ONLY THIS SECTION CHANGED: Dynamic location for providers OR "Become a Provider" */}
           {isLoggedIn && isProvider ? (
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <i className="fa-solid fa-location-dot text-[#0057FF]"></i>
@@ -230,9 +234,7 @@ function Navbar() {
               className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#0057FF] transition-colors"
             >
               <i className="fa-solid fa-globe text-gray-500"></i>
-
               <span>{currentLang}</span>
-
               <i
                 className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${
                   langDropdownOpen ? "rotate-180" : ""
@@ -242,13 +244,10 @@ function Navbar() {
 
             {langDropdownOpen && (
               <>
-                {/* Overlay */}
                 <div
                   className="fixed inset-0 z-10"
                   onClick={() => setLangDropdownOpen(false)}
                 />
-
-                {/* Dropdown */}
                 <div className="absolute right-0 top-12 w-36 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
                   {languages.map((lang) => (
                     <button
@@ -267,8 +266,8 @@ function Navbar() {
               </>
             )}
           </div>
+
           {isLoggedIn ? (
-            /* 👤 Desktop Dropdown Switch Container - UNCHANGED */
             <Link
               to="/provider-dashbaord"
               className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
@@ -276,18 +275,16 @@ function Navbar() {
               Dashboard
             </Link>
           ) : (
-            <>
-              <Link
-                to="/get-started"
-                className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
-              >
-                Get Started
-              </Link>
-            </>
+            <Link
+              to="/get-started"
+              className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
+            >
+              Get Started
+            </Link>
           )}
         </div>
 
-        {/* Burger menu — mobile only - UNCHANGED */}
+        {/* Burger menu — mobile only */}
         <button
           className="md:hidden text-gray-700 text-xl"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -296,7 +293,14 @@ function Navbar() {
         </button>
       </div>
 
-      {/* 🌟 3-Color Gradient Divider Line — Explicitly separates Navbar and SubNavbar - UNCHANGED */}
+      {/* Search Section Modal */}
+      <SearchSection
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSearch={handleSearch}
+      />
+
+      {/* 🌟 3-Color Gradient Divider Line */}
       <div
         style={{
           backgroundImage:
@@ -305,19 +309,23 @@ function Navbar() {
         className="w-full h-[2px]"
       />
 
-      {/* Mobile menu - UNCHANGED except location addition */}
+      {/* Mobile menu - UNCHANGED */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-5 py-4 flex flex-col gap-4">
-          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2">
+          {/* Mobile search trigger */}
+          <div
+            className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 cursor-pointer"
+            onClick={() => {
+              setMenuOpen(false);
+              setSearchOpen(true);
+            }}
+          >
             <i className="fa-solid fa-magnifying-glass text-gray-400 text-sm mr-3"></i>
-            <input
-              type="text"
-              placeholder="What service do you need?"
-              className="bg-transparent outline-none text-sm text-gray-500 w-full"
-            />
+            <span className="text-sm text-gray-400">
+              What service do you need?
+            </span>
           </div>
 
-          {/* 🔥 ONLY THIS SECTION CHANGED in mobile menu */}
           {isLoggedIn && isProvider ? (
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <i className="fa-solid fa-location-dot text-[#0057FF]"></i>
@@ -353,7 +361,6 @@ function Navbar() {
                 <span className="text-xs font-medium text-gray-400 capitalize">
                   Role: {user?.role || "Client"}
                 </span>
-                {/* 🔥 Added location display in mobile menu for providers */}
                 {isProvider && userLocation && (
                   <span className="text-xs text-gray-400">
                     📍 {userLocation.city}, {userLocation.state}
@@ -378,12 +385,6 @@ function Navbar() {
       )}
 
       <SubNavbar />
-      {isSearchFocused && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40"
-          onClick={() => setIsSearchFocused(false)}
-        />
-      )}
     </nav>
   );
 }

@@ -11,6 +11,8 @@ import { getAllProviders } from "../services/services";
 import { useState, useEffect } from "react";
 import { mockProvidersList } from "../mockMainData";
 
+import PartTimeWorkSection from "./PartTimeWorkSection";
+
 const categories = [
   { icon: "fa-wrench", label: "Plumbing", id: "plumbing" },
   { icon: "fa-broom", label: "Cleaning", id: "cleaning" },
@@ -158,20 +160,33 @@ function Home() {
       <section className="bg-[#F5F8FF] pt-[72px]">
         <div className="max-w-[1280px] mx-auto px-5 py-12 md:py-20 flex flex-col md:flex-row items-center justify-between gap-10">
           <div className="flex-1 max-w-full md:max-w-[560px] text-center md:text-left">
+            {/* 1. Added a small eye-catching badge to state your value proposition immediately */}
+            <span className="inline-block bg-blue-100 text-[#0057FF] text-xs font-semibold px-3 py-1 rounded-full mb-4">
+              🔒 100% Vetted & Verified Artisans
+            </span>
+
+            {/* 2. Made the headline punchier */}
             <h1 className="text-4xl md:text-[56px] font-bold text-[#1A1A1A] leading-tight mb-4">
-              Find trusted services near you
+              Find trusted service providers near you
             </h1>
+
+            {/* 3. Rephrased text to remove repetition ("service providers") and sound more professional */}
             <p className="text-base md:text-lg text-gray-500 mb-8">
-              Connect with local providers in Accra, instantly.
+              Browse our full network of verified home and property specialists.
+              Select the right professionals you need and get the job done
+              safely.
             </p>
+
             <a
               href="#categories"
-              className="inline-block bg-[#0057FF] text-white font-bold text-base px-8 py-3.5 rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-block bg-[#0057FF] text-white font-bold text-base px-8 py-3.5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
             >
               Browse Services
             </a>
           </div>
+
           <div className="flex-1 w-full max-w-full md:max-w-[560px]">
+            {/* 4. Use your custom uploaded image here to replace the generic Unsplash fallback */}
             <img
               src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?q=80&w=1469&auto=format&fit=crop"
               alt="Service providers"
@@ -207,6 +222,9 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/*Part-time worker section*/}
+      <PartTimeWorkSection />
 
       {/* <PopularServicesToday /> */}
 
@@ -268,7 +286,7 @@ function Home() {
           ) : (
             /* Original Data Grid Layout */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {mockProvidersList.data.map((provider) => {
+              {providers.map((provider) => {
                 // 1. Safely resolve MongoDB dynamic ID references
                 const providerId = provider._id || provider.id;
 
@@ -361,7 +379,7 @@ function Home() {
                             {displayName}
                           </h3>
                           <p className="text-sm text-gray-500 mb-2 capitalize">
-                            {serviceCategory}
+                            {serviceCategory} Service
                           </p>
                         </div>
                         {/* Base Price Badge */}

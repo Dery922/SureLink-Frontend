@@ -20,6 +20,7 @@ import Contact from "./Pages/Contact";
 import BookingConfirmation from "./Pages/BookingConfirmation";
 import BookingFlow from "./Pages/BookingFlow";
 import { useEffect, useState } from "react";
+import { Toaster } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 
 import api from "./APIs/api.js";
@@ -136,6 +137,17 @@ function App() {
 
   return (
     <div className="App">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: "#333",
+            color: "#fff",
+            zIndex: 999999,
+          },
+        }}
+      />
       {showChat && <ChatWidget />}
       <SaturnContactMenu />
       <Routes>

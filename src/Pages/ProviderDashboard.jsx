@@ -29,12 +29,14 @@ import {
 import { usePaystackPayment } from "react-paystack";
 import { toast } from "react-toastify";
 import { logoutUser } from "../redux/features/auth/authSlice";
-
+import ProfileOptimizationCenter from "../components/ProfileOptimizationCenter";
 // Import your auth context/hooks
 
 import HighDemandAreas from "../components/HighDemandArea";
+import NavbarDashbaord from "../components/NavbarDashboard";
 const ProviderDashboard = () => {
   const user = useSelector((state) => state.auth.user);
+  console.log(user);
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const location = useLocation();
@@ -636,184 +638,14 @@ const ProviderDashboard = () => {
   return (
     <div className="bg-gradient-to-br from-[#F5F8FF] via-white to-[#F5F8FF] min-h-screen pt-[72px]">
       {/* Navbar */}
-      <nav className="w-full bg-white/80 backdrop-blur-md border-b border-gray-100/80 fixed top-0 left-0 z-50 h-[72px] shadow-sm animate-slideDown">
-        <div className="max-w-[1280px] mx-auto px-5 h-full flex items-center justify-between">
-          <Link
-            to="/"
-            className="text-[#0057FF] font-bold text-xl tracking-tight"
-          >
-            <img
-              src="/Logo.png"
-              alt="SureLink logo"
-              className="h-20 w-auto ml-4 object-contain"
-              loading="eager"
-            />
-          </Link>
-
-          {/* Nav Links */}
-          <div className="hidden md:flex items-center gap-8">
-            {[
-              {
-                to: "/provider/manage/profile-page",
-                label: "Manage Profile",
-                icon: FaTachometerAlt,
-              },
-              {
-                to: "/provider/jobs",
-                label: "Job Requests",
-                icon: FaBriefcase,
-              },
-              { to: "/provider/earnings", label: "Earnings", icon: FaWallet },
-            ].map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`text-sm font-medium transition-all duration-300 relative group ${
-                    isActive
-                      ? "text-[#0057FF]"
-                      : "text-gray-500 hover:text-[#0057FF]"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <item.icon className="text-sm" />
-                    {item.label}
-                  </span>
-                  {isActive && (
-                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#0057FF] rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Avatar & Dropdown */}
-          <div className="relative flex items-center h-full">
-            <button
-              ref={buttonRef}
-              onClick={toggleDropdown}
-              className="flex items-center gap-3 cursor-pointer outline-none select-none group focus:outline-none"
-              aria-expanded={dropdownOpen}
-              aria-haspopup="true"
-            >
-              <div className="relative">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-r from-[#0057FF] to-[#0066FF] text-white flex items-center justify-center font-bold shadow-md group-hover:shadow-lg transition-all duration-300 overflow-hidden">
-                  {user?.avatar?.url ? (
-                    <img
-                      src={user.avatar.url}
-                      className="w-9 h-9 rounded-full object-cover"
-                      alt="Profile"
-                    />
-                  ) : (
-                    initialLetter
-                  )}
-                </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
-              </div>
-              <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
-                Hi, {userFirstName}
-                <FaChevronDown
-                  className={`text-xs text-gray-400 transition-transform duration-200 ${
-                    dropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </span>
-            </button>
-
-            {/* Dropdown */}
-            {dropdownOpen && (
-              <div
-                ref={dropdownRef}
-                style={{
-                  border: "1.5px solid transparent",
-                  backgroundImage:
-                    "linear-gradient(white, white), linear-gradient(to right, #0057FF, #FF9900, #FF3333)",
-                  backgroundOrigin: "border-box",
-                  backgroundClip: "padding-box, border-box",
-                }}
-                className="absolute right-0 top-[60px] w-64 bg-white rounded-2xl shadow-2xl py-2 z-50 animate-dropDown"
-                role="menu"
-              >
-                {/* Account Type Header */}
-                <div className="px-4 py-3 border-b border-gray-100 mb-1 bg-white rounded-t-2xl relative z-10">
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-                    Account Type
-                  </p>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                    <span className="inline-block text-xs font-bold px-2.5 py-0.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-[#0057FF] rounded-full capitalize shadow-sm">
-                      {user?.role || "Client"}
-                    </span>
-                    {user?.role === "provider" &&
-                      user?.job &&
-                      user?.job !== "Not In Services" && (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full shadow-sm">
-                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block animate-pulse" />
-                          {user.job} Professional
-                        </span>
-                      )}
-                  </div>
-                </div>
-
-                {[
-                  {
-                    to: "/provider-dashboard",
-                    icon: FaTachometerAlt,
-                    label: "Dashboard",
-                  },
-                  {
-                    to: "/provider-onboarding/profile",
-                    icon: FaUser,
-                    label: "My Profile",
-                  },
-                  { to: "/settings", icon: FaCog, label: "Settings" },
-                ].map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group"
-                    role="menuitem"
-                  >
-                    <item.icon className="text-gray-400 w-4 group-hover:text-[#0057FF] transition-colors" />
-                    {item.label}
-                  </Link>
-                ))}
-
-                <Link
-                  to="/settings"
-                  onClick={() => setDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group relative"
-                  role="menuitem"
-                >
-                  <div className="relative">
-                    <FaBell className="text-gray-400 w-4 group-hover:text-[#0057FF] transition-colors" />
-                    {notificationCount > 0 && (
-                      <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white animate-scaleIn">
-                        {notificationCount > 9 ? "9+" : notificationCount}
-                      </span>
-                    )}
-                  </div>
-                  <span>Notifications</span>
-                </Link>
-
-                <hr className="border-gray-100 my-1" />
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 font-medium text-left transition-colors group"
-                  role="menuitem"
-                >
-                  <FaSignOutAlt className="w-4 group-hover:rotate-180 transition-transform duration-300" />
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+      <NavbarDashbaord />
 
       {/* Page Content */}
       <div className="max-w-[1280px] mx-auto px-5 py-10">
+        <ProfileOptimizationCenter
+          user={user}
+          onActionClick={(targetPath) => navigate(targetPath)}
+        />
         {/* Welcome Section */}
         <div className="mb-10 animate-fadeInUp">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
