@@ -1733,109 +1733,139 @@ function ManageProfile() {
                     </div>
 
                     {/* Services List */}
-                    {services.length === 0 ? (
-                      <div className="bg-gray-50 rounded-2xl p-12 text-center border-2 border-dashed border-gray-200 animate-fadeInUp">
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <i className="fa-solid fa-briefcase text-3xl text-gray-400"></i>
-                        </div>
-                        <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">
-                          No Services Added Yet
-                        </h3>
-                        <p className="text-sm text-gray-400 mb-4">
-                          Add your first service to start attracting customers
-                        </p>
-                        <button
-                          onClick={() => openServiceModal()}
-                          className="px-6 py-2.5 bg-[#0057FF] text-white rounded-xl hover:bg-blue-700 transition-all duration-300 inline-flex items-center gap-2 hover:scale-105 hover:shadow-lg"
-                        >
-                          <i className="fa-solid fa-plus"></i>
-                          Add Your First Service
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {services.map((service, index) => (
-                          <div
-                            key={service.id || service._id}
-                            className={`bg-white border rounded-2xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                              service.isActive || service.is_active
-                                ? "border-[#E8F0FF]"
-                                : "border-gray-200 opacity-60"
-                            } animate-fadeInUp`}
-                            style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-bold text-[#1A1A1A]">
-                                    {service.name}
-                                  </h3>
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                      service.isActive || service.is_active
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-gray-100 text-gray-500"
-                                    }`}
-                                  >
-                                    {service.isActive || service.is_active
-                                      ? "Active"
-                                      : "Inactive"}
-                                  </span>
+                    {/* Alternative: Compact Card Design */}
+                    {services.length > 0 && (
+                      <div className="grid grid-cols-1 gap-4">
+                        {services.map((service, index) => {
+                          const isActive =
+                            service.is_active !== undefined
+                              ? service.is_active
+                              : service.isActive;
+                          const serviceId = service.id || service._id;
+                          const serviceTypes = service.serviceTypes || [];
+                          const pricingModel =
+                            service.pricingModel || "package";
+                          const basePrice =
+                            service.basePrice || service.price || 0;
+
+                          return (
+                            <div
+                              key={serviceId}
+                              className={`group bg-white rounded-2xl border transition-all duration-300 hover:shadow-lg hover:border-[#0057FF]/30 overflow-hidden ${
+                                isActive
+                                  ? "border-[#E8F0FF]"
+                                  : "border-gray-200 opacity-70"
+                              } animate-fadeInUp`}
+                              style={{
+                                animationDelay: `${0.1 + index * 0.05}s`,
+                              }}
+                            >
+                              <div className="p-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 mb-1.5">
+                                      <h3 className="font-bold text-[#1A1A1A] truncate">
+                                        {service.name}
+                                      </h3>
+                                      <span
+                                        className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                                          isActive
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : "bg-gray-100 text-gray-500"
+                                        }`}
+                                      >
+                                        {isActive ? "Active" : "Inactive"}
+                                      </span>
+                                      <span className="px-2 py-0.5 bg-[#0057FF]/10 text-[#0057FF] rounded-full text-xs font-medium flex-shrink-0">
+                                        {service.category || "Uncategorized"}
+                                      </span>
+                                    </div>
+
+                                    <p className="text-sm text-gray-500 line-clamp-1 mb-2">
+                                      {service.description ||
+                                        "No description provided"}
+                                    </p>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      {/* Service Types - Compact */}
+                                      {serviceTypes
+                                        .slice(0, 3)
+                                        .map((type, idx) => {
+                                          const typeInfo =
+                                            getServiceTypesForCategory(
+                                              service.category,
+                                            )?.find((t) => t.value === type);
+                                          return (
+                                            <span
+                                              key={idx}
+                                              className="text-xs bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200"
+                                            >
+                                              {typeInfo?.icon || "📌"}{" "}
+                                              {typeInfo?.label || type}
+                                            </span>
+                                          );
+                                        })}
+                                      {serviceTypes.length > 3 && (
+                                        <span className="text-xs text-gray-400">
+                                          +{serviceTypes.length - 3} more
+                                        </span>
+                                      )}
+
+                                      {/* Price */}
+                                      <span className="text-sm font-bold text-[#0057FF] ml-auto">
+                                        GH₵{" "}
+                                        {pricingModel === "package"
+                                          ? basePrice
+                                          : service.individualPrices
+                                            ? Object.values(
+                                                service.individualPrices,
+                                              )[0] || 0
+                                            : 0}
+                                        {service.priceType === "hourly" &&
+                                          "/hr"}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="flex gap-1 ml-3 flex-shrink-0">
+                                    <button
+                                      onClick={() => openServiceModal(service)}
+                                      className="w-7 h-7 rounded-lg bg-blue-50 text-[#0057FF] hover:bg-blue-100 transition-all duration-300 flex items-center justify-center hover:scale-110"
+                                      title="Edit"
+                                    >
+                                      <i className="fa-solid fa-pen text-xs"></i>
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        toggleServiceStatus(serviceId)
+                                      }
+                                      className={`w-7 h-7 rounded-lg transition-all duration-300 flex items-center justify-center hover:scale-110 ${
+                                        isActive
+                                          ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                                          : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                                      }`}
+                                      title={
+                                        isActive ? "Deactivate" : "Activate"
+                                      }
+                                    >
+                                      <i
+                                        className={`fa-solid ${isActive ? "fa-pause" : "fa-play"} text-xs`}
+                                      ></i>
+                                    </button>
+                                    <button
+                                      onClick={() => deleteService(serviceId)}
+                                      className="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all duration-300 flex items-center justify-center hover:scale-110"
+                                      title="Delete"
+                                    >
+                                      <i className="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                  </div>
                                 </div>
-                                <p className="text-sm text-gray-500 mb-2">
-                                  {service.description ||
-                                    "No description provided"}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                                  <span className="flex items-center gap-1">
-                                    <i className="fa-solid fa-tag text-[#0057FF]"></i>
-                                    {service.category || "Uncategorized"}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <i className="fa-solid fa-clock text-[#0057FF]"></i>
-                                    {service.estimatedDuration || "N/A"}
-                                  </span>
-                                  <span className="flex items-center gap-1 font-semibold text-[#0057FF]">
-                                    GH₵ {service.price}
-                                    {service.priceType === "hourly" && "/hr"}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex flex-col gap-1 ml-4">
-                                <button
-                                  onClick={() => openServiceModal(service)}
-                                  className="w-8 h-8 rounded-lg bg-blue-50 text-[#0057FF] hover:bg-blue-100 transition-all duration-300 flex items-center justify-center hover:scale-110"
-                                >
-                                  <i className="fa-solid fa-pen text-sm"></i>
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    toggleServiceStatus(
-                                      service.id || service._id,
-                                    )
-                                  }
-                                  className={`w-8 h-8 rounded-lg transition-all duration-300 flex items-center justify-center hover:scale-110 ${
-                                    service.isActive || service.is_active
-                                      ? "bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
-                                      : "bg-green-50 text-green-600 hover:bg-green-100"
-                                  }`}
-                                >
-                                  <i
-                                    className={`fa-solid ${service.isActive || service.is_active ? "fa-pause" : "fa-play"} text-sm`}
-                                  ></i>
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    deleteService(service.id || service._id)
-                                  }
-                                  className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all duration-300 flex items-center justify-center hover:scale-110"
-                                >
-                                  <i className="fa-solid fa-trash text-sm"></i>
-                                </button>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 
@@ -1886,7 +1916,6 @@ function ManageProfile() {
                   </div>
                 )}
 
-                {/* Work Gallery Tab */}
                 {/* Work Gallery Tab */}
                 {activeTab === "gallery" && (
                   <div className="space-y-6 animate-fadeInUp">
@@ -2002,13 +2031,27 @@ function ManageProfile() {
                                 alt={item.title || "Work sample"}
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 loading="lazy"
+                                onError={(e) => {
+                                  console.error(
+                                    "Image failed to load:",
+                                    item.imageUrl,
+                                  );
+                                  e.target.src =
+                                    "https://via.placeholder.com/400x400?text=No+Image";
+                                }}
                               />
 
                               {/* Overlay actions */}
                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
                                 <button
                                   onClick={() => {
-                                    setSelectedImage(item);
+                                    console.log(
+                                      "🔍 Opening lightbox with item:",
+                                      item,
+                                    );
+                                    console.log("📸 Image URL:", item.imageUrl);
+                                    // Make sure we're setting the selected image correctly
+                                    setSelectedImage({ ...item }); // Create a copy to ensure state update
                                     setIsLightboxOpen(true);
                                   }}
                                   className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors hover:scale-110 transform duration-200"
@@ -2093,18 +2136,23 @@ function ManageProfile() {
                   </div>
                 )}
 
-                {/* Lightbox Modal */}
+                {/* Lightbox Modal - FIXED */}
+                {/* Lightbox Modal - FIXED */}
                 {isLightboxOpen && selectedImage && (
                   <div
-                    className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+                    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
                     onClick={() => {
                       setIsLightboxOpen(false);
                       setSelectedImage(null);
                     }}
                   >
-                    <div className="relative max-w-4xl max-h-[90vh] w-full">
+                    <div
+                      className="relative max-w-5xl w-full max-h-[90vh]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Close button */}
                       <button
-                        className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors text-2xl"
+                        className="absolute -top-14 right-0 text-white hover:text-gray-300 transition-colors text-3xl hover:scale-110 transform duration-200"
                         onClick={() => {
                           setIsLightboxOpen(false);
                           setSelectedImage(null);
@@ -2112,28 +2160,97 @@ function ManageProfile() {
                       >
                         <i className="fa-solid fa-xmark"></i>
                       </button>
-                      <div className="bg-white rounded-2xl overflow-hidden">
-                        <img
-                          src={selectedImage.imageUrl}
-                          alt={selectedImage.title || "Work sample"}
-                          className="w-full h-auto max-h-[70vh] object-contain"
-                        />
-                        <div className="p-4 bg-white">
-                          <h3 className="font-bold text-[#1A1A1A] text-lg">
-                            {selectedImage.title || "Untitled"}
-                          </h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Uploaded:{" "}
-                            {new Date(
-                              selectedImage.createdAt,
-                            ).toLocaleDateString()}
-                          </p>
+
+                      {/* Image container */}
+                      <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
+                        <div className="bg-black/5 flex items-center justify-center min-h-[300px] max-h-[70vh] relative">
+                          {/* Debug info - shows what URL is being used */}
+                          <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                            URL: {selectedImage.imageUrl || "No URL"}
+                          </div>
+
+                          <img
+                            key={selectedImage._id} // Add key to force re-render
+                            src={selectedImage.imageUrl}
+                            alt={selectedImage.title || "Work sample"}
+                            className="w-full h-full max-h-[70vh] object-contain"
+                            onError={(e) => {
+                              console.error(
+                                "❌ Lightbox image failed to load:",
+                                selectedImage.imageUrl,
+                              );
+                              console.log(
+                                "📦 Full selectedImage object:",
+                                selectedImage,
+                              );
+                              // Try alternative URL if available
+                              const fallbackUrl =
+                                selectedImage.url ||
+                                selectedImage.images?.[0]?.url;
+                              if (
+                                fallbackUrl &&
+                                fallbackUrl !== selectedImage.imageUrl
+                              ) {
+                                console.log(
+                                  "🔄 Trying fallback URL:",
+                                  fallbackUrl,
+                                );
+                                e.target.src = fallbackUrl;
+                              } else {
+                                e.target.src =
+                                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
+                              }
+                            }}
+                            onLoad={() => {
+                              console.log(
+                                "✅ Lightbox image loaded successfully:",
+                                selectedImage.imageUrl,
+                              );
+                            }}
+                          />
+                        </div>
+
+                        {/* Image info */}
+                        <div className="p-6 bg-white">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-bold text-xl text-[#1A1A1A]">
+                                {selectedImage.title || "Untitled"}
+                              </h3>
+                              {selectedImage.category && (
+                                <p className="text-sm text-[#0057FF] font-medium mt-1">
+                                  {selectedImage.category}
+                                </p>
+                              )}
+                              {selectedImage.description && (
+                                <p className="text-sm text-gray-600 mt-2">
+                                  {selectedImage.description}
+                                </p>
+                              )}
+                              {selectedImage.createdAt && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                  Uploaded:{" "}
+                                  {new Date(
+                                    selectedImage.createdAt,
+                                  ).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => {
+                                setIsLightboxOpen(false);
+                                setSelectedImage(null);
+                              }}
+                              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm font-medium hover:scale-105 transform duration-200"
+                            >
+                              Close
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
-
                 {/* Settings Tab */}
                 {activeTab === "settings" && (
                   <div className="space-y-6 animate-fadeInUp">

@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   FaUser,
   FaCog,
+  FaHouseUser,
+  FaAirbnb,
   FaBell,
   FaSignOutAlt,
   FaTachometerAlt,
@@ -119,12 +121,12 @@ const NavbarDashbaord = () => {
     {
       to: "/provider-dashbaord",
       label: "Home",
-      icon: FaTachometerAlt,
+      icon: FaHouseUser, // Font Awesome home icon
     },
     {
       to: "/provider/manage/profile-page",
       label: "Manager Profile",
-      icon: FaBriefcase,
+      icon: FaUser, // Font Awesome user settings icon
     },
     { to: "/provider/earnings", label: "Earnings", icon: FaWallet },
   ];
@@ -146,10 +148,10 @@ const NavbarDashbaord = () => {
   return (
     <nav className="w-full bg-white/80 backdrop-blur-md border-b border-gray-100/80 fixed top-0 left-0 z-50 h-[72px] shadow-sm animate-slideDown">
       <div className="max-w-[1280px] mx-auto px-5 h-full flex items-center justify-between">
-        {/* Logo */}
+        {/* Logo - Hidden on mobile */}
         <Link
           to="/"
-          className="text-[#0057FF] font-bold text-xl tracking-tight"
+          className="text-[#0057FF] font-bold text-xl tracking-tight hidden md:block"
         >
           <img
             src="/Logo.png"
@@ -159,7 +161,20 @@ const NavbarDashbaord = () => {
           />
         </Link>
 
-        {/* Nav Links */}
+        {/* Logo - Mobile (smaller) */}
+        <Link
+          to="/"
+          className="text-[#0057FF] font-bold text-xl tracking-tight md:hidden"
+        >
+          <img
+            src="/Logo.png"
+            alt="SureLink logo"
+            className="h-12 w-auto object-contain"
+            loading="eager"
+          />
+        </Link>
+
+        {/* Nav Links - Desktop */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((item) => {
             const isActive = location.pathname === item.to;
@@ -179,6 +194,29 @@ const NavbarDashbaord = () => {
                 </span>
                 {isActive && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#0057FF] rounded-full" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Nav Links - Mobile (Icons only, centered) */}
+        <div className="flex md:hidden items-center justify-center gap-12 flex-1">
+          {navLinks.map((item) => {
+            const isActive = location.pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`relative group ${
+                  isActive
+                    ? "text-[#0057FF]"
+                    : "text-gray-500 hover:text-[#0057FF]"
+                }`}
+              >
+                <item.icon className="text-2xl" />
+                {isActive && (
+                  <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-[#0057FF] rounded-full" />
                 )}
               </Link>
             );
@@ -208,7 +246,8 @@ const NavbarDashbaord = () => {
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
             </div>
-            <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+            {/* Hide "Hi, Name" on mobile */}
+            <span className="text-sm font-semibold text-gray-800 items-center gap-1 hidden sm:flex">
               Hi, {userFirstName}
               <FaChevronDown
                 className={`text-xs text-gray-400 transition-transform duration-200 ${
@@ -216,6 +255,12 @@ const NavbarDashbaord = () => {
                 }`}
               />
             </span>
+            {/* Show just the chevron on very small screens */}
+            <FaChevronDown
+              className={`text-xs text-gray-400 transition-transform duration-200 sm:hidden ${
+                dropdownOpen ? "rotate-180" : ""
+              }`}
+            />
           </button>
 
           {/* Dropdown */}

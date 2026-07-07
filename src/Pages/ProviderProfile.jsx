@@ -16,104 +16,11 @@ function ProviderProfile() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [galleryFilter, setGalleryFilter] = useState("all");
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  console.log(provider);
 
-  // Mock gallery data for testing
+  // Mock gallery data for testing (keep as fallback)
   const mockGallery = [
-    {
-      _id: "1",
-      title: "Modern Kitchen Renovation",
-      category: "Kitchen",
-      description:
-        "Complete kitchen remodel with custom cabinets and quartz countertops",
-      url: "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800&q=80",
-      },
-    },
-    {
-      _id: "2",
-      title: "Bathroom Remodel",
-      category: "Bathroom",
-      description:
-        "Luxury bathroom renovation with walk-in shower and modern fixtures",
-      url: "https://images.unsplash.com/photo-1552321554-5fef8c9d4bf6?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1552321554-5fef8c9d4bf6?w=800&q=80",
-      },
-    },
-    {
-      _id: "3",
-      title: "Living Room Design",
-      category: "Interior",
-      description:
-        "Contemporary living room with custom furniture and accent wall",
-      url: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800&q=80",
-      },
-    },
-    {
-      _id: "4",
-      title: "Exterior Painting",
-      category: "Exterior",
-      description: "Complete exterior painting with modern color scheme",
-      url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80",
-      },
-    },
-    {
-      _id: "5",
-      title: "Deck Installation",
-      category: "Outdoor",
-      description: "Custom wooden deck with integrated lighting and seating",
-      url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
-      },
-    },
-    {
-      _id: "6",
-      title: "Office Renovation",
-      category: "Interior",
-      description: "Modern office space with open concept and natural lighting",
-      url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-      },
-    },
-    {
-      _id: "7",
-      title: "Kitchen Backsplash",
-      category: "Kitchen",
-      description:
-        "Custom tile backsplash installation with herringbone pattern",
-      url: "https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=800&q=80",
-      },
-    },
-    {
-      _id: "8",
-      title: "Landscaping Project",
-      category: "Outdoor",
-      description:
-        "Complete landscape design with native plants and water feature",
-      url: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=80",
-      },
-    },
-    {
-      _id: "9",
-      title: "Master Bedroom Suite",
-      category: "Interior",
-      description: "Luxurious master bedroom with custom closet and ensuite",
-      url: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80",
-      image: {
-        url: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80",
-      },
-    },
+    // ... your mock gallery data
   ];
 
   // Fetch provider data when component mounts or id changes
@@ -130,12 +37,14 @@ function ProviderProfile() {
         setError(null);
         const response = await getProviderById(id);
 
-        // Add mock gallery data for testing
+        // If provider has no gallery, use mock data for testing
         const providerData = response.data;
-        providerData.gallery = mockGallery;
+        if (!providerData.gallery || providerData.gallery.length === 0) {
+          providerData.gallery = mockGallery;
+        }
 
         setProvider(providerData);
-        console.log("this is mobdata", response);
+        console.log("Provider data:", providerData);
       } catch (err) {
         console.error("Error fetching provider:", err);
         setError(err.message || "Failed to load provider profile");
@@ -272,12 +181,12 @@ function ProviderProfile() {
       <Navbar />
 
       <div className="pt-[72px]">
-        {/* Cover photo */}
+        {/* Cover photo - Using provider.coverPicture.url */}
         <div className="relative w-full h-[200px] md:h-[300px] lg:h-[350px]">
           <img
             src={
               provider.coverPicture?.url ||
-              provider.cover ||
+              provider.coverPicture ||
               "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80"
             }
             alt={provider.name?.full || provider.name}
@@ -289,11 +198,15 @@ function ProviderProfile() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
 
-          {/* Status badge */}
+          {/* Status badge - Using provider.provider_profile.open_for_work */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
               <span
-                className={`w-2 h-2 rounded-full ${provider.provider_profile?.open_for_work !== false ? "bg-green-500 animate-pulse" : "bg-red-500"}`}
+                className={`w-2 h-2 rounded-full ${
+                  provider.provider_profile?.open_for_work !== false
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-red-500"
+                }`}
               ></span>
               <span className="text-xs font-medium text-gray-800">
                 {provider.provider_profile?.open_for_work !== false
@@ -315,6 +228,7 @@ function ProviderProfile() {
                     src={
                       provider.avatar?.url ||
                       provider.avatar ||
+                      provider.provider_profile?.avatar_url ||
                       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80"
                     }
                     alt={provider.name?.full || provider.name}
@@ -324,7 +238,8 @@ function ProviderProfile() {
                         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80";
                     }}
                   />
-                  {provider.verification?.phone?.verified && (
+                  {/* Verification badge */}
+                  {provider.verification?.status === "verified" && (
                     <div className="absolute -bottom-1 -right-1 bg-[#0057FF] text-white rounded-full p-1.5 border-2 border-white">
                       <i className="fa-solid fa-check text-[10px]"></i>
                     </div>
@@ -333,27 +248,34 @@ function ProviderProfile() {
 
                 <div>
                   <div className="flex items-center gap-3 flex-wrap">
+                    {/* Name - Using provider.name.full */}
                     <h1 className="text-2xl md:text-3xl font-bold text-[#1A1A1A]">
                       {provider.name?.full ||
                         provider.name ||
                         "Service Provider"}
                     </h1>
-                    {provider.badges &&
-                      provider.badges.map((badge, index) => (
-                        <span
-                          key={index}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-medium ${
-                            badge === "Verified"
-                              ? "bg-green-50 text-green-600 border border-green-200"
-                              : badge === "Top Rated"
-                                ? "bg-[#FF6B00]/10 text-[#FF6B00] border border-[#FF6B00]/20"
-                                : "bg-[#0057FF]/10 text-[#0057FF] border border-[#0057FF]/20"
-                          }`}
-                        >
-                          {badge}
-                        </span>
-                      ))}
+                    {/* Display name badge */}
+                    {provider.name?.display && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#0057FF]/10 text-[#0057FF] border border-[#0057FF]/20">
+                        @{provider.name.display}
+                      </span>
+                    )}
+                    {/* Trust status badge */}
+                    {provider.trust?.status === "verified" && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-green-50 text-green-600 border border-green-200">
+                        <i className="fa-solid fa-circle-check mr-1"></i>
+                        Verified
+                      </span>
+                    )}
+                    {provider.trust?.status === "verification_pending" && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                        <i className="fa-solid fa-clock mr-1"></i>
+                        Pending Verification
+                      </span>
+                    )}
                   </div>
+
+                  {/* Category - Using provider.provider_profile.category */}
                   <p className="text-gray-500 text-sm mt-1">
                     {provider.provider_profile?.category ||
                       provider.service ||
@@ -380,15 +302,19 @@ function ProviderProfile() {
                       </span>
                     </div>
                     <span className="w-px h-4 bg-gray-200"></span>
+
+                    {/* Location - Using provider.provider_profile.service_area */}
                     <div className="flex items-center gap-1.5">
                       <i className="fa-solid fa-location-dot text-xs text-[#0057FF]"></i>
                       <span className="text-sm text-gray-600">
-                        {provider.location?.home_address?.area ||
-                          provider.provider_profile?.service_area ||
+                        {provider.provider_profile?.service_area ||
+                          provider.location?.home_address?.area ||
                           provider.location ||
                           "Location not specified"}
                       </span>
                     </div>
+
+                    {/* Service Radius - Using provider.provider_profile.service_radius_km */}
                     {provider.provider_profile?.service_radius_km && (
                       <>
                         <span className="w-px h-4 bg-gray-200"></span>
@@ -403,7 +329,7 @@ function ProviderProfile() {
                     )}
                   </div>
 
-                  {/* Languages */}
+                  {/* Languages - Using provider.languages (if available) */}
                   {provider.languages && provider.languages.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <span className="text-xs text-gray-400">Speaks:</span>
@@ -425,6 +351,7 @@ function ProviderProfile() {
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <p className="text-sm text-gray-400">Starting from</p>
+                    {/* Base Price - Using provider.provider_profile.base_price */}
                     <p className="text-2xl font-bold text-[#0057FF]">
                       {provider.provider_profile?.base_price
                         ? `GH₵ ${provider.provider_profile.base_price}`
@@ -477,7 +404,7 @@ function ProviderProfile() {
               {/* About tab */}
               {activeTab === "about" && (
                 <div className="space-y-8">
-                  {/* Bio */}
+                  {/* Bio - Using provider.provider_profile.bio */}
                   <div>
                     <h2 className="text-lg font-bold text-[#1A1A1A] mb-3">
                       About
@@ -654,6 +581,7 @@ function ProviderProfile() {
                       Verification
                     </h3>
                     <div className="flex flex-wrap gap-4">
+                      {/* Phone Verification */}
                       {provider.verification?.phone?.verified && (
                         <div className="flex items-center gap-2 bg-green-50 border border-green-200 px-4 py-2 rounded-xl">
                           <i className="fa-solid fa-phone text-green-600"></i>
@@ -662,6 +590,7 @@ function ProviderProfile() {
                           </span>
                         </div>
                       )}
+                      {/* Email Verification */}
                       {provider.verification?.email?.verified && (
                         <div className="flex items-center gap-2 bg-green-50 border border-green-200 px-4 py-2 rounded-xl">
                           <i className="fa-solid fa-envelope text-green-600"></i>
@@ -670,11 +599,21 @@ function ProviderProfile() {
                           </span>
                         </div>
                       )}
-                      {provider.trust?.score && (
+                      {/* ID Verification - Using provider.provider_profile.id_type */}
+                      {provider.provider_profile?.id_type && (
                         <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl">
-                          <i className="fa-solid fa-shield-halved text-[#0057FF]"></i>
+                          <i className="fa-solid fa-id-card text-[#0057FF]"></i>
                           <span className="text-sm text-[#0057FF]">
-                            Trust Score: {provider.trust.score}
+                            {provider.provider_profile.id_type} Verified
+                          </span>
+                        </div>
+                      )}
+                      {/* Trust Status */}
+                      {provider.trust?.status === "verified" && (
+                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl">
+                          <i className="fa-solid fa-shield-halved text-emerald-600"></i>
+                          <span className="text-sm text-emerald-700">
+                            Trust Verified
                           </span>
                         </div>
                       )}
@@ -742,7 +681,23 @@ function ProviderProfile() {
                                 <p className="text-xs text-gray-400 mt-0.5">
                                   {service.description}
                                 </p>
-                                <div className="flex items-center gap-3 mt-2">
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  {/* Service Types */}
+                                  {service.serviceTypes &&
+                                    service.serviceTypes.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {service.serviceTypes.map(
+                                          (type, idx) => (
+                                            <span
+                                              key={idx}
+                                              className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full"
+                                            >
+                                              {type}
+                                            </span>
+                                          ),
+                                        )}
+                                      </div>
+                                    )}
                                   <span className="text-xs text-gray-400">
                                     <i className="fa-solid fa-clock mr-1"></i>
                                     {service.duration || "Variable"}
@@ -752,10 +707,21 @@ function ProviderProfile() {
                             </div>
                             <div className="text-right">
                               <p className="font-bold text-[#0057FF] text-lg">
-                                {service.price
-                                  ? `GH₵ ${service.price}`
+                                {service.basePrice || service.price
+                                  ? `GH₵ ${service.basePrice || service.price}`
                                   : "GH₵ 0"}
+                                {service.priceType === "hourly" && "/hr"}
                               </p>
+                              {service.pricingModel === "individual" &&
+                                service.individualPrices && (
+                                  <p className="text-xs text-gray-400">
+                                    {
+                                      Object.keys(service.individualPrices)
+                                        .length
+                                    }{" "}
+                                    pricing options
+                                  </p>
+                                )}
                               <Link
                                 to={`/booking/${provider._id || provider.id}`}
                                 className="text-xs text-gray-400 group-hover:text-[#0057FF] transition-colors"
@@ -897,13 +863,25 @@ function ProviderProfile() {
                     </div>
                   )}
                   <div
-                    className={`mt-4 flex items-center gap-2 ${provider.provider_profile?.open_for_work !== false ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"} border rounded-xl px-4 py-3`}
+                    className={`mt-4 flex items-center gap-2 ${
+                      provider.provider_profile?.open_for_work !== false
+                        ? "bg-green-50 border-green-200"
+                        : "bg-red-50 border-red-200"
+                    } border rounded-xl px-4 py-3`}
                   >
                     <i
-                      className={`fa-solid fa-circle-check ${provider.provider_profile?.open_for_work !== false ? "text-green-600" : "text-red-600"}`}
+                      className={`fa-solid fa-circle-check ${
+                        provider.provider_profile?.open_for_work !== false
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
                     ></i>
                     <span
-                      className={`text-sm ${provider.provider_profile?.open_for_work !== false ? "text-green-700" : "text-red-700"}`}
+                      className={`text-sm ${
+                        provider.provider_profile?.open_for_work !== false
+                          ? "text-green-700"
+                          : "text-red-700"
+                      }`}
                     >
                       {provider.provider_profile?.open_for_work !== false
                         ? "Currently accepting new bookings"

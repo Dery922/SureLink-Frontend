@@ -24,57 +24,6 @@ const categories = [
   { icon: "fa-ellipsis", label: "More", id: "all" },
 ];
 
-const providerss = [
-  {
-    id: 1,
-    name: "Kwame Mensah",
-    service: "Plumbing",
-    rating: 4.8,
-    reviews: 24,
-    location: "Accra, Ghana",
-    cover:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
-  },
-  {
-    id: 2,
-    name: "Ama Owusu",
-    service: "Cleaning",
-    rating: 4.9,
-    reviews: 36,
-    location: "Accra, Ghana",
-    cover:
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80",
-    avatar:
-      "https://images.unsplash.com/photo-1548142813-c348350df52b?w=200&q=80",
-  },
-  {
-    id: 3,
-    name: "Kofi Asante",
-    service: "Electrical",
-    rating: 4.7,
-    reviews: 18,
-    location: "Accra, Ghana",
-    cover:
-      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&q=80",
-    avatar:
-      "https://images.unsplash.com/photo-1607346256330-dee7af15f7c5?w=200&q=80",
-  },
-  {
-    id: 4,
-    name: "Abena Darko",
-    service: "Catering",
-    rating: 4.9,
-    reviews: 42,
-    location: "Accra, Ghana",
-    cover:
-      "https://images.unsplash.com/photo-1555244162-803834f70033?w=600&q=80",
-    avatar:
-      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&q=80",
-  },
-];
-
 const steps = [
   {
     icon: "fa-magnifying-glass",
@@ -103,13 +52,43 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  //all useEffects here
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [isAvatarLightboxOpen, setIsAvatarLightboxOpen] = useState(false);
 
+  // Handle avatar click
+  const handleAvatarClick = (provider) => {
+    const displayName =
+      provider.business_profile?.businessName ||
+      provider.name?.full ||
+      `${provider.name?.first || ""} ${provider.name?.last || ""}`.trim() ||
+      "Professional Provider";
+
+    const avatarUrl =
+      provider.avatar?.url ||
+      provider.provider_profile?.avatar_url ||
+      "https://ui-avatars.com/api/?name=" +
+        encodeURIComponent(displayName) +
+        "&background=0057FF&color=fff";
+
+    setSelectedAvatar(avatarUrl);
+    setSelectedProvider(provider);
+    setIsAvatarLightboxOpen(true);
+  };
+
+  // Close avatar lightbox
+  const closeAvatarLightbox = () => {
+    setIsAvatarLightboxOpen(false);
+    setSelectedAvatar(null);
+    setSelectedProvider(null);
+  };
+
+  //all useEffects here
   useEffect(() => {
     async function fetchTopProviders() {
       try {
         setLoading(true);
-        setError(null); // Clear previous errors on retry
+        setError(null);
 
         const result = await getAllProviders();
 
@@ -124,7 +103,6 @@ function Home() {
         ) {
           setProviders(result.data.users);
         } else {
-          // Handle unexpected success payload format
           throw new Error("Invalid response format received from registry.");
         }
       } catch (error) {
@@ -132,7 +110,6 @@ function Home() {
           "❌ Failed to load providers from backend registry:",
           error,
         );
-        // Set the error message so the UI knows the server is down
         setError(
           "Unable to connect to the server. Please check your network or server status.",
         );
@@ -152,6 +129,7 @@ function Home() {
   };
   const handleBookNow = () => {};
   const handleChatNow = () => {};
+
   return (
     <div className="bg-white min-h-screen">
       <Navbar />
@@ -160,33 +138,25 @@ function Home() {
       <section className="bg-[#F5F8FF] pt-[72px]">
         <div className="max-w-[1280px] mx-auto px-5 py-12 md:py-20 flex flex-col md:flex-row items-center justify-between gap-10">
           <div className="flex-1 max-w-full md:max-w-[560px] text-center md:text-left">
-            {/* 1. Added a small eye-catching badge to state your value proposition immediately */}
             <span className="inline-block bg-blue-100 text-[#0057FF] text-xs font-semibold px-3 py-1 rounded-full mb-4">
               🔒 100% Vetted & Verified Artisans
             </span>
-
-            {/* 2. Made the headline punchier */}
             <h1 className="text-4xl md:text-[56px] font-bold text-[#1A1A1A] leading-tight mb-4">
               Find trusted service providers near you
             </h1>
-
-            {/* 3. Rephrased text to remove repetition ("service providers") and sound more professional */}
             <p className="text-base md:text-lg text-gray-500 mb-8">
               Browse our full network of verified home and property specialists.
               Select the right professionals you need and get the job done
               safely.
             </p>
-
-            <a
-              href="#categories"
+            <Link
+              to="/category/all"
               className="inline-block bg-[#0057FF] text-white font-bold text-base px-8 py-3.5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
             >
               Browse Services
-            </a>
+            </Link>
           </div>
-
           <div className="flex-1 w-full max-w-full md:max-w-[560px]">
-            {/* 4. Use your custom uploaded image here to replace the generic Unsplash fallback */}
             <img
               src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?q=80&w=1469&auto=format&fit=crop"
               alt="Service providers"
@@ -226,8 +196,7 @@ function Home() {
       {/*Part-time worker section*/}
       <PartTimeWorkSection />
 
-      {/* <PopularServicesToday /> */}
-
+      {/* Top Providers Section */}
       <section className="bg-[#F5F8FF] py-12 md:py-16">
         <div className="max-w-[1280px] mx-auto px-5">
           <div className="flex items-center justify-between mb-8">
@@ -249,14 +218,9 @@ function Home() {
                   key={index}
                   className="bg-white rounded-2xl overflow-hidden border border-[#E8F0FF] shadow-sm animate-pulse"
                 >
-                  {/* Banner Image Skeleton */}
                   <div className="h-[160px] bg-gray-200" />
-
                   <div className="p-4 pt-6 relative">
-                    {/* Avatar Skeleton */}
                     <div className="w-12 h-12 rounded-full bg-gray-300 border-2 border-white absolute -top-6 left-4" />
-
-                    {/* Title & Price Row Skeleton */}
                     <div className="flex items-start justify-between mt-2 mb-4">
                       <div className="space-y-2 w-2/3">
                         <div className="h-4 bg-gray-200 rounded w-full" />
@@ -264,17 +228,11 @@ function Home() {
                       </div>
                       <div className="h-8 bg-gray-100 rounded-lg w-14 flex-shrink-0" />
                     </div>
-
-                    {/* Ratings & Location Skeleton */}
                     <div className="space-y-2 mb-4">
                       <div className="h-3 bg-gray-200 rounded w-1/3" />
                       <div className="h-3 bg-gray-200 rounded w-1/4" />
                     </div>
-
-                    {/* Trust Metrics Row Skeleton */}
                     <div className="h-8 bg-[#F5F8FF] rounded-lg mb-4" />
-
-                    {/* Action Buttons Skeleton */}
                     <div className="grid grid-cols-3 gap-2">
                       <div className="col-span-2 h-10 bg-gray-200 rounded-lg" />
                       <div className="h-10 bg-gray-200 rounded-lg" />
@@ -290,25 +248,28 @@ function Home() {
                 // 1. Safely resolve MongoDB dynamic ID references
                 const providerId = provider._id || provider.id;
 
-                // 2. Safely capture names to fix the Object rendering crash
+                // 2. Safely capture names
                 const displayName =
                   provider.business_profile?.businessName ||
                   provider.name?.full ||
                   `${provider.name?.first || ""} ${provider.name?.last || ""}`.trim() ||
                   "Professional Provider";
 
-                // 3. Fallbacks for images matching your Cloudinary / Schema structure
-                const coverUrl =
-                  provider.coverPicture?.url ||
-                  provider.provider_profile?.cover_picture ||
-                  "https://unsplash.com";
-
+                // 3. Avatar URL - FIXED using displayName
                 const avatarUrl =
                   provider.avatar?.url ||
                   provider.provider_profile?.avatar_url ||
-                  "https://flaticon.com";
+                  "https://ui-avatars.com/api/?name=" +
+                    encodeURIComponent(displayName) +
+                    "&background=0057FF&color=fff";
 
-                // 4. Fallbacks for specific service metrics
+                // 4. Cover image fallback
+                const coverUrl =
+                  provider.coverPicture?.url ||
+                  provider.provider_profile?.cover_picture ||
+                  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80";
+
+                // 5. Service metrics
                 const serviceCategory =
                   provider.provider_profile?.category || "General Services";
                 const serviceCity =
@@ -318,7 +279,7 @@ function Home() {
 
                 const basePrice = provider.provider_profile?.base_price || 0;
                 const completedJobs =
-                  provider.provider_profile?.experience_years || 0; // Swap out with completed jobs if tracked later
+                  provider.provider_profile?.experience_years || 0;
 
                 return (
                   <div
@@ -330,6 +291,8 @@ function Home() {
                         src={coverUrl}
                         alt={displayName}
                         className="w-full h-full object-cover"
+                        onClick={() => handleProviderClick(providerId)}
+                        style={{ cursor: "pointer" }}
                       />
                       <div className="absolute inset-0 bg-black opacity-20"></div>
 
@@ -367,10 +330,13 @@ function Home() {
                     </div>
 
                     <div className="p-4 pt-6 relative">
+                      {/* Avatar - Clickable */}
                       <img
                         src={avatarUrl}
                         alt={displayName}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4"
+                        onClick={() => handleAvatarClick(provider)}
+                        title="Click to view full size"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white absolute -top-6 left-4 cursor-pointer hover:ring-2 hover:ring-[#0057FF] hover:ring-offset-2 transition-all duration-300"
                       />
 
                       <div className="flex items-start justify-between mt-2">
@@ -470,10 +436,91 @@ function Home() {
           )}
         </div>
       </section>
+
+      {/* Avatar Lightbox Modal */}
+      {isAvatarLightboxOpen && selectedAvatar && selectedProvider && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
+          onClick={closeAvatarLightbox}
+        >
+          <div
+            className="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={closeAvatarLightbox}
+              className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-10"
+            >
+              <i className="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            {/* Image Container */}
+            <div className="relative">
+              <img
+                src={selectedAvatar}
+                alt={
+                  selectedProvider.business_profile?.businessName || "Provider"
+                }
+                className="w-full h-auto max-h-[70vh] object-contain bg-gray-50"
+              />
+            </div>
+
+            {/* Provider Info */}
+            <div className="p-6 bg-white border-t border-gray-100">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-bold text-lg text-[#1A1A1A]">
+                    {selectedProvider.business_profile?.businessName ||
+                      selectedProvider.name?.full ||
+                      "Service Provider"}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {selectedProvider.provider_profile?.category ||
+                      "Service Provider"}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <i
+                          key={i}
+                          className={`fa-solid fa-star text-xs ${
+                            i <
+                            Math.floor(
+                              selectedProvider.trust?.average_rating || 0,
+                            )
+                              ? "text-[#FF6B00]"
+                              : "text-gray-200"
+                          }`}
+                        ></i>
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      ({selectedProvider.trust?.total_ratings || 0} reviews)
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    closeAvatarLightbox();
+                    const providerId =
+                      selectedProvider._id || selectedProvider.id;
+                    window.location.href = `/provider/${providerId}`;
+                  }}
+                  className="px-4 py-2 bg-[#0057FF] text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  View Full Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ComingSoon />
       <TrustMatrix />
+
       {/* How it Works Section */}
-      {/* How It Works Section - Redesigned */}
       <section className="bg-white py-12 md:py-20">
         <div className="max-w-[1280px] mx-auto px-5">
           <div className="text-center mb-12">
@@ -490,7 +537,6 @@ function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative">
-            {/* Connecting line - hidden on mobile */}
             <div className="hidden md:block absolute top-24 left-1/3 right-1/3 h-0.5 bg-[#E8F0FF] -translate-y-1/2"></div>
 
             {[
@@ -541,12 +587,9 @@ function Home() {
                 key={index}
                 className="relative bg-white border border-[#E8F0FF] rounded-2xl p-6 md:p-8 hover:shadow-lg transition-all hover:-translate-y-1 group"
               >
-                {/* Step Number */}
                 <div className="absolute -top-3 -left-3 w-8 h-8 bg-[#1A1A1A] text-white text-sm font-bold rounded-full flex items-center justify-center">
                   {step.step}
                 </div>
-
-                {/* Icon with animated background */}
                 <div className="flex items-center gap-4 mb-4">
                   <div
                     className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
@@ -564,15 +607,12 @@ function Home() {
                     Step {step.step}
                   </span>
                 </div>
-
                 <h3 className="text-lg md:text-xl font-bold text-[#1A1A1A] mb-2">
                   {step.title}
                 </h3>
                 <p className="text-sm text-gray-500 leading-relaxed mb-4">
                   {step.description}
                 </p>
-
-                {/* Highlights */}
                 <div className="space-y-1.5">
                   {step.highlights.map((highlight, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-sm">
@@ -584,8 +624,6 @@ function Home() {
                     </div>
                   ))}
                 </div>
-
-                {/* Decorative gradient line at bottom */}
                 <div
                   className="absolute bottom-0 left-0 right-0 h-1 rounded-b-2xl opacity-0 group-hover:opacity-100 transition-opacity"
                   style={{ backgroundColor: step.color }}
@@ -594,7 +632,6 @@ function Home() {
             ))}
           </div>
 
-          {/* Trust Badge - Additional social proof */}
           <div className="mt-12 bg-gradient-to-r from-[#F5F8FF] to-white rounded-2xl p-6 md:p-8 border border-[#E8F0FF]">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               <div className="text-center">
@@ -628,7 +665,6 @@ function Home() {
             </div>
           </div>
 
-          {/* CTA */}
           <div className="mt-8 text-center">
             <Link
               to="/category/all"
