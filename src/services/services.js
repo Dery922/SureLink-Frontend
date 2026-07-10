@@ -50,20 +50,93 @@ export const uploadGalleryImages = async (formData) => {
  * Fetch a single provider by ID
  * @param {string} id - Provider ID
  */
-// export const getProviderById = async (id) => {
-//   try {
-//     const response = await api.get(`/get/provider/${id}`);
-//     return response.data;
-//   } catch (error) {
-//     console.error(
-//       "Error fetching provider:",
-//       error.response?.data || error.message,
-//     );
-//     throw error.response?.data || error;
-//   }
-// };
+export const getProviderById = async (id) => {
+  try {
+    const response = await api.get(`/get/provider/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching provider:",
+      error.response?.data || error.message,
+    );
+    throw error.response?.data || error;
+  }
+};
 
+// src/services/booking.js or src/services/services.js
+
+// Create a new booking
 // src/services/services.js
+// src/services/services.js
+
+export const createBooking = async (bookingData) => {
+  try {
+    console.log("📤 API Request: POST /bookings", bookingData);
+    const response = await api.post("/bookings", bookingData);
+    return response.data;
+  } catch (error) {
+    console.error("❌ API Error Captured:", error.message);
+
+    // 🟢 FIX: Create a real Error instance so the Promise chain rejects cleanly
+    const customError = new Error(
+      error.response?.data?.message || error.message,
+    );
+
+    // Attach your custom status codes to the error object safely
+    customError.status = error.response?.status || error.status;
+    customError.response = error.response;
+
+    throw customError; // 🚀 This will now jump directly into your frontend's catch block!
+  }
+};
+
+// Get user's bookings
+export const getUserBookings = async () => {
+  try {
+    const response = await api.get("/bookings/my-bookings");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user bookings:", error);
+    throw error.response?.data || error;
+  }
+};
+
+// Get a specific booking by ID
+export const getBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching booking:", error);
+    throw error.response?.data || error;
+  }
+};
+
+// Cancel a booking
+export const cancelBooking = async (bookingId) => {
+  try {
+    const response = await api.patch(`/bookings/${bookingId}/cancel`);
+    return response.data;
+  } catch (error) {
+    console.error("Error cancelling booking:", error);
+    throw error.response?.data || error;
+  }
+};
+
+// Update booking status (provider only)
+export const updateBookingStatus = async (bookingId, status) => {
+  try {
+    const response = await api.patch(`/bookings/${bookingId}/status`, {
+      status,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    throw error.response?.data || error;
+  }
+};
+
+//src/services/services.js
 
 // Get current logged-in user
 export const getCurrentUser = async () => {
@@ -178,14 +251,14 @@ export const saveProviderServices = async (servicesData) => {
 };
 
 // Original function
-export const getProviderById = async (id) => {
-  // Comment out the real API call and use mock instead
-  // const response = await api.get(`/providers/${id}`);
-  // return response.data;
+// export const getProviderById = async (id) => {
+//   // Comment out the real API call and use mock instead
+//   // const response = await api.get(`/providers/${id}`);
+//   // return response.data;
 
-  // Use mock data
-  return mockApiCall(id);
-};
+//   // Use mock data
+//   return mockApiCall(id);
+// };
 
 /**
  * Fetch gallery images with pagination

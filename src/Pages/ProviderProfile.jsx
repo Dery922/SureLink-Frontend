@@ -16,12 +16,95 @@ function ProviderProfile() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [galleryFilter, setGalleryFilter] = useState("all");
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  console.log(provider);
 
-  // Mock gallery data for testing (keep as fallback)
+  // Mock gallery data for testing (fallback only)
   const mockGallery = [
     // ... your mock gallery data
   ];
+
+  const getServiceIcon = (service) => {
+    // Map categories to icons
+    const categoryIcons = {
+      Plumbing: "fa-wrench",
+      Cleaning: "fa-broom",
+      Electrical: "fa-bolt",
+      Carpentry: "fa-hammer",
+      Painting: "fa-paint-roller",
+      Gardening: "fa-seedling",
+      "Pest Control": "fa-bug",
+      "Appliance Repair": "fa-tools",
+      HVAC: "fa-snowflake",
+      Roofing: "fa-house",
+      Flooring: "fa-layer-group",
+      Tiling: "fa-th-large",
+      Landscaping: "fa-tree",
+      "Pool Maintenance": "fa-water",
+      "Security Systems": "fa-shield-halved",
+      "Smart Home": "fa-house-signal",
+      "Interior Design": "fa-pencil-ruler",
+      "Event Planning": "fa-calendar-plus",
+      Catering: "fa-utensils",
+      Photography: "fa-camera",
+      "IT Services": "fa-laptop-code",
+      "Web Development": "fa-code",
+      "Mobile App Development": "fa-mobile-alt",
+      "Digital Marketing": "fa-bullhorn",
+      "Content Writing": "fa-pen-fancy",
+      "Graphic Design": "fa-palette",
+      "Video Editing": "fa-video",
+      "Music Lessons": "fa-music",
+      Tutoring: "fa-graduation-cap",
+      "Fitness Training": "fa-dumbbell",
+      "Massage Therapy": "fa-hand-sparkles",
+      "Hair & Beauty": "fa-cut",
+      "Mobile Car Wash": "fa-car",
+      "Auto Repair": "fa-car-repair",
+      "Glass Repair": "fa-window-maximize",
+      Locksmith: "fa-lock",
+      Handyman: "fa-toolbox",
+      "Moving Services": "fa-truck",
+      "Junk Removal": "fa-trash",
+      Other: "fa-circle-plus",
+    };
+
+    // Check if service has a category that maps to an icon
+    if (service.category && categoryIcons[service.category]) {
+      return categoryIcons[service.category];
+    }
+
+    // Check if service has service types and use the first one
+    if (service.serviceTypes && service.serviceTypes.length > 0) {
+      const typeIcons = {
+        pipe_repair: "fa-pipe",
+        installation: "fa-download",
+        drainage: "fa-water",
+        leak_detection: "fa-search",
+        water_heater: "fa-fire",
+        bathroom_repair: "fa-bath",
+        kitchen_plumbing: "fa-kitchen-set",
+        pipe_insulation: "fa-snowflake",
+        deep_cleaning: "fa-spray-can",
+        carpet_cleaning: "fa-broom",
+        window_cleaning: "fa-window-maximize",
+        move_in_out: "fa-truck-moving",
+        commercial: "fa-building",
+        wiring: "fa-plug",
+        lighting: "fa-lightbulb",
+        panel_upgrade: "fa-microchip",
+        outlet_repair: "fa-plug",
+        ceiling_fan: "fa-fan",
+        // Add more as needed
+      };
+
+      const firstType = service.serviceTypes[0];
+      if (typeIcons[firstType]) {
+        return typeIcons[firstType];
+      }
+    }
+
+    // Default fallback
+    return "fa-wrench";
+  };
 
   // Fetch provider data when component mounts or id changes
   useEffect(() => {
@@ -37,14 +120,33 @@ function ProviderProfile() {
         setError(null);
         const response = await getProviderById(id);
 
-        // If provider has no gallery, use mock data for testing
-        const providerData = response.data;
-        if (!providerData.gallery || providerData.gallery.length === 0) {
-          providerData.gallery = mockGallery;
+        // The response structure: { success: true, data: { provider, services, gallery } }
+        const responseData = response.data;
+
+        // Extract provider, services, and gallery from the response
+        const providerData = responseData.provider || responseData;
+        const servicesData = responseData.services || [];
+        const galleryData = responseData.gallery || [];
+
+        // Combine into a single provider object with services and gallery
+        const combinedProvider = {
+          ...providerData,
+          services: servicesData,
+          gallery: galleryData,
+        };
+
+        // If no gallery, use mock data for testing
+        if (
+          !combinedProvider.gallery ||
+          combinedProvider.gallery.length === 0
+        ) {
+          combinedProvider.gallery = mockGallery;
         }
 
-        setProvider(providerData);
-        console.log("Provider data:", providerData);
+        setProvider(combinedProvider);
+        console.log("Provider data:", combinedProvider);
+        console.log("Services:", combinedProvider.services);
+        console.log("Gallery:", combinedProvider.gallery);
       } catch (err) {
         console.error("Error fetching provider:", err);
         setError(err.message || "Failed to load provider profile");
@@ -176,6 +278,11 @@ function ProviderProfile() {
     );
   }
 
+  // Get services and gallery from provider object
+  const servicesList = provider.services || [];
+  const galleryList = provider.gallery || [];
+  const userProfile = provider.provider_profile || {};
+
   return (
     <div className="bg-[#F8FAFB] min-h-screen">
       <Navbar />
@@ -198,18 +305,18 @@ function ProviderProfile() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
 
-          {/* Status badge - Using provider.provider_profile.open_for_work */}
+          {/* Status badge - Using userProfile.open_for_work */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
               <span
                 className={`w-2 h-2 rounded-full ${
-                  provider.provider_profile?.open_for_work !== false
+                  userProfile?.open_for_work !== false
                     ? "bg-green-500 animate-pulse"
                     : "bg-red-500"
                 }`}
               ></span>
               <span className="text-xs font-medium text-gray-800">
-                {provider.provider_profile?.open_for_work !== false
+                {userProfile?.open_for_work !== false
                   ? "Available"
                   : "Unavailable"}
               </span>
@@ -228,7 +335,7 @@ function ProviderProfile() {
                     src={
                       provider.avatar?.url ||
                       provider.avatar ||
-                      provider.provider_profile?.avatar_url ||
+                      userProfile?.avatar_url ||
                       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80"
                     }
                     alt={provider.name?.full || provider.name}
@@ -275,9 +382,9 @@ function ProviderProfile() {
                     )}
                   </div>
 
-                  {/* Category - Using provider.provider_profile.category */}
+                  {/* Category - Using userProfile.category */}
                   <p className="text-gray-500 text-sm mt-1">
-                    {provider.provider_profile?.category ||
+                    {userProfile?.category ||
                       provider.service ||
                       "Service Provider"}
                   </p>
@@ -303,26 +410,25 @@ function ProviderProfile() {
                     </div>
                     <span className="w-px h-4 bg-gray-200"></span>
 
-                    {/* Location - Using provider.provider_profile.service_area */}
+                    {/* Location - Using userProfile.service_area */}
                     <div className="flex items-center gap-1.5">
                       <i className="fa-solid fa-location-dot text-xs text-[#0057FF]"></i>
                       <span className="text-sm text-gray-600">
-                        {provider.provider_profile?.service_area ||
+                        {userProfile?.service_area ||
                           provider.location?.home_address?.area ||
                           provider.location ||
                           "Location not specified"}
                       </span>
                     </div>
 
-                    {/* Service Radius - Using provider.provider_profile.service_radius_km */}
-                    {provider.provider_profile?.service_radius_km && (
+                    {/* Service Radius - Using userProfile.service_radius_km */}
+                    {userProfile?.service_radius_km && (
                       <>
                         <span className="w-px h-4 bg-gray-200"></span>
                         <div className="flex items-center gap-1.5">
                           <i className="fa-solid fa-globe text-xs text-[#0057FF]"></i>
                           <span className="text-sm text-gray-600">
-                            {provider.provider_profile.service_radius_km}km
-                            radius
+                            {userProfile.service_radius_km}km radius
                           </span>
                         </div>
                       </>
@@ -351,15 +457,15 @@ function ProviderProfile() {
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <p className="text-sm text-gray-400">Starting from</p>
-                    {/* Base Price - Using provider.provider_profile.base_price */}
+                    {/* Base Price - Using userProfile.base_price */}
                     <p className="text-2xl font-bold text-[#0057FF]">
-                      {provider.provider_profile?.base_price
-                        ? `GH₵ ${provider.provider_profile.base_price}`
+                      {userProfile?.base_price
+                        ? `GH₵ ${userProfile.base_price}`
                         : provider.displayPrice || "GH₵ 0"}
                     </p>
-                    {provider.provider_profile?.hourly_rate && (
+                    {userProfile?.hourly_rate && (
                       <p className="text-xs text-gray-400">
-                        GH₵ {provider.provider_profile.hourly_rate}/hr
+                        GH₵ {userProfile.hourly_rate}/hr
                       </p>
                     )}
                   </div>
@@ -404,30 +510,26 @@ function ProviderProfile() {
               {/* About tab */}
               {activeTab === "about" && (
                 <div className="space-y-8">
-                  {/* Bio - Using provider.provider_profile.bio */}
+                  {/* Bio - Using userProfile.bio */}
                   <div>
                     <h2 className="text-lg font-bold text-[#1A1A1A] mb-3">
                       About
                     </h2>
                     <p className="text-gray-600 text-sm leading-relaxed">
                       {showFullBio
-                        ? provider.provider_profile?.bio ||
+                        ? userProfile?.bio ||
                           provider.about ||
                           provider.bio ||
                           "No bio available"
                         : (
-                            provider.provider_profile?.bio ||
+                            userProfile?.bio ||
                             provider.about ||
                             provider.bio ||
                             "No bio available"
                           ).slice(0, 150) + "..."}
                     </p>
-                    {(
-                      provider.provider_profile?.bio ||
-                      provider.about ||
-                      provider.bio ||
-                      ""
-                    ).length > 150 && (
+                    {(userProfile?.bio || provider.about || provider.bio || "")
+                      .length > 150 && (
                       <button
                         onClick={() => setShowFullBio(!showFullBio)}
                         className="text-[#0057FF] text-sm font-medium hover:underline mt-2"
@@ -437,20 +539,20 @@ function ProviderProfile() {
                     )}
                   </div>
 
-                  {/* Work Gallery Section */}
+                  {/* Work Gallery Section - Using galleryList */}
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-bold text-[#1A1A1A]">
                         Work Gallery
                       </h2>
-                      {provider.gallery && provider.gallery.length > 0 && (
+                      {galleryList && galleryList.length > 0 && (
                         <span className="text-sm text-gray-400">
-                          {provider.gallery.length} photos
+                          {galleryList.length} photos
                         </span>
                       )}
                     </div>
 
-                    {!provider.gallery || provider.gallery.length === 0 ? (
+                    {!galleryList || galleryList.length === 0 ? (
                       <div className="bg-gray-50 rounded-2xl p-8 text-center border-2 border-dashed border-gray-200">
                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                           <i className="fa-regular fa-images text-2xl text-gray-400"></i>
@@ -495,7 +597,7 @@ function ProviderProfile() {
                               }}
                             >
                               <img
-                                src={item.image?.url || item.url || item}
+                                src={item.imageUrl || item.url || item}
                                 alt={item.title || `Work sample ${index + 1}`}
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                 onError={(e) => {
@@ -541,11 +643,11 @@ function ProviderProfile() {
                     )}
                   </div>
 
-                  {/* Stats Grid */}
+                  {/* Stats Grid - Using userProfile and galleryList */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-gradient-to-br from-[#F5F8FF] to-white rounded-2xl p-5 text-center border border-[#E8F0FF]">
                       <p className="text-2xl font-bold text-[#0057FF]">
-                        {provider.provider_profile?.experience_years || 0}+
+                        {userProfile?.experience_years || 0}+
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         Years Experience
@@ -569,7 +671,7 @@ function ProviderProfile() {
                     </div>
                     <div className="bg-gradient-to-br from-[#F5F8FF] to-white rounded-2xl p-5 text-center border border-[#E8F0FF]">
                       <p className="text-2xl font-bold text-[#0057FF]">
-                        {provider.gallery?.length || 0}
+                        {galleryList?.length || 0}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Work Samples</p>
                     </div>
@@ -599,12 +701,12 @@ function ProviderProfile() {
                           </span>
                         </div>
                       )}
-                      {/* ID Verification - Using provider.provider_profile.id_type */}
-                      {provider.provider_profile?.id_type && (
+                      {/* ID Verification - Using userProfile.id_type */}
+                      {userProfile?.id_type && (
                         <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl">
                           <i className="fa-solid fa-id-card text-[#0057FF]"></i>
                           <span className="text-sm text-[#0057FF]">
-                            {provider.provider_profile.id_type} Verified
+                            {userProfile.id_type} Verified
                           </span>
                         </div>
                       )}
@@ -620,38 +722,35 @@ function ProviderProfile() {
                     </div>
                   </div>
 
-                  {/* Secondary Categories */}
-                  {provider.provider_profile?.secondaryCategories &&
-                    provider.provider_profile.secondaryCategories.length >
-                      0 && (
+                  {/* Secondary Categories - Using userProfile.secondaryCategories */}
+                  {userProfile?.secondaryCategories &&
+                    userProfile.secondaryCategories.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-[#1A1A1A] mb-2">
                           Specialties
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {provider.provider_profile.secondaryCategories.map(
-                            (cat, index) => (
-                              <span
-                                key={index}
-                                className="bg-gray-50 px-3 py-1.5 rounded-lg text-sm text-gray-600 border border-gray-200"
-                              >
-                                {cat}
-                              </span>
-                            ),
-                          )}
+                          {userProfile.secondaryCategories.map((cat, index) => (
+                            <span
+                              key={index}
+                              className="bg-gray-50 px-3 py-1.5 rounded-lg text-sm text-gray-600 border border-gray-200"
+                            >
+                              {cat}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}
                 </div>
               )}
 
-              {/* Services tab */}
+              {/* Services tab - Using servicesList */}
               {activeTab === "services" && (
                 <div>
                   <h2 className="text-lg font-bold text-[#1A1A1A] mb-4">
                     Services Offered
                   </h2>
-                  {!provider.services || provider.services.length === 0 ? (
+                  {!servicesList || servicesList.length === 0 ? (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i className="fa-solid fa-tools text-2xl text-gray-300"></i>
@@ -662,7 +761,7 @@ function ProviderProfile() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {provider.services.map((service, index) => (
+                      {servicesList.map((service, index) => (
                         <div
                           key={service._id || index}
                           className="group bg-white border border-[#E8F0FF] rounded-2xl p-5 hover:shadow-lg hover:border-[#0057FF] transition-all duration-300"
@@ -671,7 +770,7 @@ function ProviderProfile() {
                             <div className="flex items-start gap-4">
                               <div className="w-12 h-12 bg-[#E8F0FF] rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[#0057FF] group-hover:text-white transition-colors">
                                 <i
-                                  className={`fa-solid ${service.icon || "fa-wrench"} text-[#0057FF] group-hover:text-white`}
+                                  className={`fa-solid ${getServiceIcon(service)} text-[#0057FF] group-hover:text-white`}
                                 ></i>
                               </div>
                               <div>
@@ -864,26 +963,26 @@ function ProviderProfile() {
                   )}
                   <div
                     className={`mt-4 flex items-center gap-2 ${
-                      provider.provider_profile?.open_for_work !== false
+                      userProfile?.open_for_work !== false
                         ? "bg-green-50 border-green-200"
                         : "bg-red-50 border-red-200"
                     } border rounded-xl px-4 py-3`}
                   >
                     <i
                       className={`fa-solid fa-circle-check ${
-                        provider.provider_profile?.open_for_work !== false
+                        userProfile?.open_for_work !== false
                           ? "text-green-600"
                           : "text-red-600"
                       }`}
                     ></i>
                     <span
                       className={`text-sm ${
-                        provider.provider_profile?.open_for_work !== false
+                        userProfile?.open_for_work !== false
                           ? "text-green-700"
                           : "text-red-700"
                       }`}
                     >
-                      {provider.provider_profile?.open_for_work !== false
+                      {userProfile?.open_for_work !== false
                         ? "Currently accepting new bookings"
                         : "Currently not accepting new bookings"}
                     </span>
@@ -918,7 +1017,7 @@ function ProviderProfile() {
             <div className="bg-white rounded-2xl overflow-hidden">
               <img
                 src={
-                  selectedImage.image?.url || selectedImage.url || selectedImage
+                  selectedImage.imageUrl || selectedImage.url || selectedImage
                 }
                 alt={selectedImage.title || "Work sample"}
                 className="w-full h-auto max-h-[70vh] object-contain"
