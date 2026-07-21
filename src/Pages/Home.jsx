@@ -1,4 +1,4 @@
-// src/pages/Home.jsx - Fixed with provider self-booking prevention
+// src/pages/Home.jsx - Clean error handling without internet assumptions
 
 import { Link, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -158,41 +158,65 @@ function Home() {
     );
   };
 
-  useEffect(() => {
-    async function fetchTopProviders() {
-      try {
-        setLoading(true);
-        setError(null);
+  // Extract the fetch function to be reusable
+  const fetchTopProviders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const result = await getAllProviders();
+      const result = await getAllProviders();
 
-        console.log("🔍 Live backend response dataset:", result);
+      console.log("🔍 Live backend response dataset:", result);
 
-        if (result && result.success && Array.isArray(result.data)) {
-          setProviders(result.data);
-        } else if (
-          result &&
-          result.success &&
-          Array.isArray(result.data?.users)
-        ) {
-          setProviders(result.data.users);
-        } else {
-          setProviders([]);
-          setError("No providers found in your area.");
-        }
-      } catch (error) {
-        console.error(
-          "❌ Failed to load providers from backend registry:",
-          error,
-        );
-        setError(
-          "Unable to connect to the server. Please check your network or server status.",
-        );
+      if (result && result.success && Array.isArray(result.data)) {
+        setProviders(result.data);
+      } else if (
+        result &&
+        result.success &&
+        Array.isArray(result.data?.users)
+      ) {
+        setProviders(result.data.users);
+      } else {
         setProviders([]);
-      } finally {
-        setLoading(false);
+        setError("No providers found in your area at the moment.");
       }
+    } catch (error) {
+      console.error(
+        "❌ Failed to load providers from backend registry:",
+        error,
+      );
+
+      // More accurate error detection - without blaming user's internet
+      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        setError("The server is taking too long to respond. Please try again.");
+      } else if (error.response?.status === 500) {
+        setError(
+          "We're experiencing technical difficulties. Our team is working on it. Please try again in a few minutes.",
+        );
+      } else if (error.response?.status === 404) {
+        setError("Service temporarily unavailable. Please try again later.");
+      } else if (error.response?.status === 503) {
+        setError(
+          "We're currently undergoing maintenance. Please check back soon.",
+        );
+      } else if (error.response?.status >= 500) {
+        setError("Server error. Please try again later.");
+      } else if (error.request) {
+        // Request was made but no response received
+        // This could be: server down, network issue, CORS, etc.
+        setError("Unable to connect to the server. Please try again.");
+      } else {
+        // Something else happened
+        setError("Something went wrong. Please try again.");
+      }
+
+      setProviders([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchTopProviders();
   }, []);
 
@@ -243,7 +267,7 @@ function Home() {
       );
     }
 
-    // Case 2: Error
+    // Case 2: Error - Clean, friendly error messages
     if (error && providers.length === 0) {
       return (
         <div className="bg-white rounded-2xl p-12 text-center border-2 border-red-100 shadow-sm">
@@ -251,16 +275,25 @@ function Home() {
             <i className="fa-solid fa-server text-3xl text-red-500"></i>
           </div>
           <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">
-            Connection Error
+            Unable to Load Providers
           </h3>
           <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-[#0057FF] text-white rounded-xl hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-          >
-            <i className="fa-solid fa-rotate-right"></i>
-            Try Again
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={fetchTopProviders}
+              className="px-6 py-2.5 bg-[#0057FF] text-white rounded-xl hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+            >
+              <i className="fa-solid fa-rotate-right"></i>
+              Try Again
+            </button>
+            <Link
+              to="/category/all"
+              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors inline-flex items-center gap-2"
+            >
+              <i className="fa-solid fa-search"></i>
+              Browse All Services
+            </Link>
+          </div>
         </div>
       );
     }
@@ -288,7 +321,7 @@ function Home() {
               Browse All Services
             </Link>
             <button
-              onClick={() => window.location.reload()}
+              onClick={fetchTopProviders}
               className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors inline-flex items-center gap-2"
             >
               <i className="fa-solid fa-rotate-right"></i>
