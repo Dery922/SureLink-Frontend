@@ -6,11 +6,14 @@ import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
+import MessageProvider from "./components/CustomMessage";
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <BrowserRouter>
     <Provider store={store}>
-      <App />
+      <MessageProvider>
+        <App />
+      </MessageProvider>
     </Provider>
   </BrowserRouter>,
 );

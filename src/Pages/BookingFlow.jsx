@@ -1,12 +1,41 @@
-// src/pages/BookingFlow.jsx
+// src/pages/BookingFlow.jsx - Updated with animated modal
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import PaystackPop from "@paystack/inline-js";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import useAuthCheck from "../hooks/useAuthCheck";
-import { getProviderById, createBooking } from "../services/services";
+import {
+  getProviderById,
+  createBooking,
+  checkBookingAvailability,
+} from "../services/services";
+import {
+  initializePaystackPayment,
+  verifyPaystackPayment,
+} from "../services/paystackService";
 import toast from "react-hot-toast";
+import { useCustomMessage } from "../components/CustomMessage";
+import {
+  FaMobile,
+  FaCreditCard,
+  FaMoneyBillWave,
+  FaSpinner,
+  FaTimesCircle,
+  FaClock,
+  FaCalendarAlt,
+  FaMapMarkerAlt,
+  FaUser,
+  FaWrench,
+  FaTools,
+  FaArrowLeft,
+  FaArrowRight,
+  FaInfoCircle,
+  FaCheckCircle,
+} from "react-icons/fa";
+import { PaystackIcon } from "../components/PaystackIcon";
 
 const timeSlots = [
   "8:00 AM",
@@ -31,7 +60,9 @@ function BookingFlow() {
 
   // Form state
   const [selectedService, setSelectedService] = useState(null);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [selectedTime, setSelectedTime] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -41,47 +72,56 @@ function BookingFlow() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [selectedMobileNetwork, setSelectedMobileNetwork] = useState("mtn");
+  const [paymentReference, setPaymentReference] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [paystackHandler, setPaystackHandler] = useState(null);
+  const [showBookingError, setShowBookingError] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
+  const {
+    success,
+    error: showError,
+    info,
+    warning,
+    loading: showLoading,
+    errorModal,
+  } = useCustomMessage();
   const totalPrice = selectedService
     ? selectedService.basePrice || selectedService.price || 0
     : 0;
 
   // Check authentication on mount
   useEffect(() => {
-    console.log("🔐 Running auth check...");
-
-    // If already authenticated, set authChecked to true immediately
     if (isAuthenticated && user) {
-      console.log("✅ User already authenticated, setting authChecked to true");
       setAuthChecked(true);
       setLoading(false);
       return;
     }
 
-    // Otherwise, run the check
     try {
       const isAuthed = checkAuth();
-      console.log("  - checkAuth result:", isAuthed);
       setAuthChecked(true);
 
       if (!isAuthed) {
-        toast.error("Please log in to book a service");
-        setLoading(false); // ✅ Set loading to false when not authenticated
+        errorModal("error", "Please login or signup to book a service");
+        setLoading(false);
         return;
       }
 
-      setLoading(false); // ✅ Set loading to false when authenticated
+      setLoading(false);
     } catch (error) {
       console.error("❌ Auth check error:", error);
       setAuthChecked(true);
-      setLoading(false); // ✅ Set loading to false on error
+      setLoading(false);
     }
   }, [isAuthenticated, user, checkAuth]);
 
-  // Validate ID
   useEffect(() => {
     if (authChecked && isAuthenticated && !id) {
-      console.error("❌ No ID provided");
       setError("Invalid provider ID");
       setLoading(false);
       toast.error("Invalid provider ID");
@@ -89,47 +129,29 @@ function BookingFlow() {
     }
   }, [authChecked, isAuthenticated, id, navigate]);
 
-  // Fetch provider data using existing endpoint
+  // Fetch provider data
   useEffect(() => {
-    console.log("📡 Fetch effect triggered:", {
-      authChecked,
-      isAuthenticated,
-      id,
-      dataFetched,
-      shouldFetch: authChecked && isAuthenticated && id && !dataFetched,
-    });
-
     const fetchProviderData = async () => {
       if (!id) {
-        console.error("❌ No ID provided");
         setError("Invalid provider ID");
         setLoading(false);
         return;
       }
 
       try {
-        console.log("📡 Fetching provider data for ID:", id);
         setLoading(true);
         setError(null);
 
         const response = await getProviderById(id);
-        console.log("📦 Provider data response:", response);
 
         if (response && response.success) {
           const responseData = response.data;
-          // Handle both possible response structures
           const providerData = responseData.provider || responseData;
           const servicesData = responseData.services || [];
 
           setProvider(providerData);
           setServices(servicesData);
           setDataFetched(true);
-
-          console.log(
-            "✅ Provider loaded:",
-            providerData?.name?.full || providerData?.name,
-          );
-          console.log("✅ Services loaded:", servicesData.length);
           setLoading(false);
         } else {
           throw new Error("Failed to fetch provider data");
@@ -139,17 +161,14 @@ function BookingFlow() {
         setError(
           err.message || "Failed to load provider services. Please try again.",
         );
-        toast.error("Failed to load services");
+        errorModal("error", "Failed to load services");
         setLoading(false);
       }
     };
 
-    // Only fetch when auth is checked, user is authenticated, we have an id, and data hasn't been fetched
     if (authChecked && isAuthenticated && id && !dataFetched) {
       fetchProviderData();
     } else if (authChecked && !isAuthenticated) {
-      // If auth checked but not authenticated, redirect to login
-      console.log("🔒 Not authenticated, redirecting to login");
       setLoading(false);
       navigate("/login");
     } else if (authChecked && isAuthenticated && !id) {
@@ -157,74 +176,282 @@ function BookingFlow() {
     }
   }, [id, authChecked, isAuthenticated, navigate, dataFetched]);
 
-  // Show loading while checking auth or fetching data
-  if (loading || !authChecked) {
-    console.log(
-      "⏳ Showing loading state - loading:",
-      loading,
-      "authChecked:",
-      authChecked,
-    );
-    return (
-      <div className="bg-white min-h-screen">
-        <Navbar />
-        <div className="pt-[72px] flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-[#E8F0FF] border-t-[#0057FF] rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-500 text-sm">
-              {!authChecked
-                ? "Checking authentication..."
-                : "Loading booking details..."}
-            </p>
-            <p className="text-xs text-gray-400 mt-2">
-              {!authChecked
-                ? "Please wait..."
-                : "Fetching provider services..."}
-            </p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  // ✅ FIXED: Initialize Paystack Inline Modal
+  const openPaystackModal = (accessCode, email, amount, reference) => {
+    try {
+      console.log("🔑 Opening Paystack Modal with:", {
+        accessCode,
+        publicKey: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
+      });
 
-  // If not authenticated, don't render the rest
-  if (!isAuthenticated) {
-    console.log("🔒 Not authenticated, returning null");
-    return null;
-  }
+      // 1. Initialize Paystack V2 engine instance
+      const paystack = new PaystackPop();
 
-  // If error or no provider
-  if (error || !provider) {
-    console.log("⚠️ Error or no provider:", error);
-    return (
-      <div className="bg-white min-h-screen">
-        <Navbar />
-        <div className="pt-[72px] flex items-center justify-center min-h-[60vh]">
-          <div className="text-center max-w-md mx-auto px-4">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-triangle-exclamation text-3xl text-red-500"></i>
-            </div>
-            <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">
-              Unable to Load Services
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              {error || "The provider you're looking for doesn't exist."}
-            </p>
-            <button
-              onClick={() => navigate("/providers")}
-              className="px-6 py-2.5 bg-[#0057FF] text-white rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              Browse Providers
-            </button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+      // 2. Open new transaction with correct V2 properties
+      paystack.newTransaction({
+        key: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
 
-  // Helper to get icon for service
+        // ✅ FIX 1: Change to camelCase 'accessCode' without underscores
+        accessCode: accessCode,
+
+        // ✅ FIX 2: V2 Callbacks map directly to onSuccess and onCancel
+        onSuccess: function (response) {
+          console.log("✅ Payment successful:", response);
+          setPaymentStatus("success");
+          setShowPaymentModal(false);
+          setIsProcessingPayment(false);
+
+          // Verify and create booking
+          verifyAndCreateBooking(response.reference || reference);
+        },
+        onCancel: function () {
+          console.log("❌ Payment modal closed");
+          setPaymentStatus("failed");
+          setShowPaymentModal(false);
+          setIsProcessingPayment(false);
+          toast.error("Payment was cancelled");
+        },
+      });
+
+      setShowPaymentModal(true);
+    } catch (error) {
+      console.error("❌ Error opening Paystack modal:", error);
+      setPaymentStatus("failed");
+      setShowPaymentModal(false);
+      setIsProcessingPayment(false);
+      toast.error("Failed to open payment modal. Please try again.");
+    }
+  };
+
+  // Verify payment and create booking
+  const verifyAndCreateBooking = async (reference) => {
+    try {
+      console.log("🔍 Verifying payment:", reference);
+      const verification = await verifyPaystackPayment(reference);
+
+      if (verification.success) {
+        await createBookingAfterPayment(reference);
+      } else {
+        setPaymentStatus("failed");
+        toast.error("Payment verification failed");
+      }
+    } catch (error) {
+      console.error("❌ Verification error:", error);
+      setPaymentStatus("failed");
+      toast.error("Payment verification failed");
+    }
+  };
+
+  // Handle payment initialization
+  const handlePayment = async () => {
+    // Validate booking details
+    if (!selectedService) {
+      toast.error("Please select a service");
+      return;
+    }
+    if (!selectedDate) {
+      toast.error("Please select a date");
+      return;
+    }
+    if (!selectedTime) {
+      toast.error("Please select a time");
+      return;
+    }
+    if (!address || !city) {
+      toast.error("Please provide your location");
+      return;
+    }
+
+    // For Cash on Delivery, skip Paystack
+    if (paymentMethod === "cash") {
+      createBookingWithoutPayment();
+      return;
+    }
+
+    // For Mobile Money and Debit Card, use Paystack
+    setIsProcessingPayment(true);
+    setPaymentStatus("processing");
+
+    try {
+      // Prepare booking data for Paystack initialization
+      const bookingData = {
+        providerId: provider._id || provider.id,
+        providerName: provider?.name?.full || provider?.name || "Provider",
+        serviceId: selectedService._id || selectedService.id,
+        serviceName: selectedService.name,
+        servicePrice: totalPrice,
+        serviceCategory: selectedService.category,
+        date: selectedDate,
+        time: selectedTime,
+        address,
+        city,
+        paymentMethod,
+        mobileNetwork: selectedMobileNetwork,
+        customerName: user?.name?.full || user?.email,
+        customerEmail: user?.email,
+        totalAmount: totalPrice,
+      };
+
+      // Initialize payment with backend
+      const response = await initializePaystackPayment(bookingData);
+      console.log("📦 Paystack initialization response:", response);
+
+      if (response && response.success) {
+        const { reference, access_code } = response.data;
+        setPaymentReference(reference);
+
+        // ✅ Open the Paystack modal smoothly
+        openPaystackModal(
+          access_code,
+          user?.email || "customer@example.com",
+          totalPrice,
+          reference,
+        );
+      } else {
+        throw new Error(response?.message || "Failed to initialize payment");
+      }
+    } catch (error) {
+      console.error("❌ Payment initialization error:", error);
+      setIsProcessingPayment(false);
+      setPaymentStatus("failed");
+      setShowPaymentModal(false);
+      toast.error(
+        error.message || "Failed to initialize payment. Please try again.",
+      );
+    }
+  };
+
+  // Create booking after successful payment
+  const createBookingAfterPayment = async (paymentReference) => {
+    if (!selectedService) return toast.error("Please select a service");
+    if (!selectedDate) return toast.error("Please select a date");
+    if (!selectedTime) return toast.error("Please select a time");
+    if (!address || !city) return toast.error("Please provide your location");
+
+    setIsSubmitting(true);
+
+    try {
+      const bookingData = {
+        providerId: provider._id || provider.id,
+        providerName: provider?.name?.full || provider?.name || "Provider",
+        serviceId: selectedService._id || selectedService.id,
+        serviceName: selectedService.name,
+        servicePrice: totalPrice,
+        serviceCategory: selectedService.category,
+        serviceTypes: selectedService.serviceTypes || [],
+        date: selectedDate,
+        time: selectedTime,
+        address,
+        city,
+        landmark,
+        paymentMethod,
+        paymentMethodDetails: {
+          network: selectedMobileNetwork,
+          reference: paymentReference,
+        },
+        specialInstructions,
+        customerName: user?.name?.full || user?.email,
+        totalAmount: totalPrice,
+        paymentReference: paymentReference,
+        paymentStatus: "completed",
+        mobileNetwork: selectedMobileNetwork,
+      };
+
+      console.log("📝 Sending Booking Data:", bookingData);
+      const response = await createBooking(bookingData);
+      console.log("✅ Received Booking response:", response);
+
+      if (response && response.success) {
+        toast.success("Booking confirmed successfully!");
+        setIsSubmitting(false);
+        setPaymentStatus("success");
+        setShowPaymentModal(false);
+
+        return navigate(
+          `/booking-confirmation/${provider._id || provider.id}`,
+          {
+            state: {
+              booking: bookingData,
+              bookingId: response.data?._id || response.data?.id,
+              paymentReference: paymentReference,
+              paymentStatus: "completed",
+            },
+          },
+        );
+      }
+
+      throw new Error(response?.message || "Booking failed. Please try again.");
+    } catch (error) {
+      console.error("❌ Catch Block Triggered:", error);
+      setIsSubmitting(false);
+      setPaymentStatus("failed");
+      toast.error(
+        error.message || "Failed to create booking. Please try again.",
+      );
+    }
+  };
+
+  // Create booking without payment (for Cash on Delivery)
+  const createBookingWithoutPayment = async () => {
+    if (!selectedService) return toast.error("Please select a service");
+    if (!selectedDate) return toast.error("Please select a date");
+    if (!selectedTime) return toast.error("Please select a time");
+    if (!address || !city) return toast.error("Please provide your location");
+
+    setIsSubmitting(true);
+
+    try {
+      const bookingData = {
+        providerId: provider._id || provider.id,
+        providerName: provider?.name?.full || provider?.name || "Provider",
+        serviceId: selectedService._id || selectedService.id,
+        serviceName: selectedService.name,
+        servicePrice: totalPrice,
+        serviceCategory: selectedService.category,
+        serviceTypes: selectedService.serviceTypes || [],
+        date: selectedDate,
+        time: selectedTime,
+        address,
+        city,
+        landmark,
+        paymentMethod: "cash",
+        specialInstructions,
+        customerName: user?.name?.full || user?.email,
+        totalAmount: totalPrice,
+        paymentStatus: "pending",
+      };
+
+      console.log("📝 Sending Booking Data (Cash):", bookingData);
+      const response = await createBooking(bookingData);
+      console.log("✅ Received Booking response:", response);
+
+      if (response && response.success) {
+        toast.success("Booking confirmed successfully!");
+        setIsSubmitting(false);
+
+        return navigate(
+          `/booking-confirmation/${provider._id || provider.id}`,
+          {
+            state: {
+              booking: bookingData,
+              bookingId: response.data?._id || response.data?.id,
+              paymentStatus: "pending",
+            },
+          },
+        );
+      }
+
+      throw new Error(response?.message || "Booking failed. Please try again.");
+    } catch (error) {
+      console.error("❌ Catch Block Triggered:", error);
+      setIsSubmitting(false);
+      toast.error(
+        error.message || "Failed to create booking. Please try again.",
+      );
+    }
+  };
+
+  // Get service icon helper
   const getServiceIcon = (service) => {
     const categoryIcons = {
       Plumbing: "fa-wrench",
@@ -271,33 +498,94 @@ function BookingFlow() {
       return categoryIcons[service.category];
     }
 
-    if (service.serviceTypes && service.serviceTypes.length > 0) {
-      const typeIcons = {
-        pipe_repair: "fa-pipe",
-        installation: "fa-download",
-        drainage: "fa-water",
-        leak_detection: "fa-search",
-        deep_cleaning: "fa-spray-can",
-        carpet_cleaning: "fa-broom",
-        window_cleaning: "fa-window-maximize",
-        move_in_out: "fa-truck-moving",
-        wiring: "fa-plug",
-        lighting: "fa-lightbulb",
-        panel_upgrade: "fa-microchip",
-        outlet_repair: "fa-plug",
-        ceiling_fan: "fa-fan",
-      };
-
-      const firstType = service.serviceTypes[0];
-      if (typeIcons[firstType]) {
-        return typeIcons[firstType];
-      }
-    }
-
     return "fa-wrench";
   };
 
-  // Step 1: Select Service
+  // ✅ FIXED: handleStep2Next now properly checks availability
+  const handleStep2Next = async () => {
+    if (isCheckingAvailability) return;
+
+    setIsCheckingAvailability(true);
+    try {
+      const response = await checkBookingAvailability({
+        providerId: provider._id,
+        date: selectedDate,
+        time: selectedTime,
+      });
+
+      if (response.success) {
+        setStep(3);
+      }
+    } catch (error) {
+      if (error.response?.status === 409) {
+        setModalMessage(error.response.data.message);
+        setShowBookingError(true);
+        return;
+      }
+
+      console.error(error);
+      setModalMessage(
+        "Unable to check booking availability. Please try again.",
+      );
+      setShowBookingError(true);
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  };
+
+  // Loading state
+  if (loading || !authChecked) {
+    return (
+      <div className="bg-white min-h-screen">
+        <Navbar />
+        <div className="pt-[72px] flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-[#E8F0FF] border-t-[#0057FF] rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500 text-sm">
+              {!authChecked
+                ? "Checking authentication..."
+                : "Loading booking details..."}
+            </p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (error || !provider) {
+    return (
+      <div className="bg-white min-h-screen">
+        <Navbar />
+        <div className="pt-[72px] flex items-center justify-center min-h-[60vh]">
+          <div className="text-center max-w-md mx-auto px-4">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaTimesCircle className="text-3xl text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">
+              Unable to Load Services
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              {error || "The provider you're looking for doesn't exist."}
+            </p>
+            <button
+              onClick={() => navigate("/providers")}
+              className="px-6 py-2.5 bg-[#0057FF] text-white rounded-xl hover:bg-blue-700 transition-colors"
+            >
+              Browse Providers
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Step render functions
   const renderStep1 = () => (
     <div className="max-w-[800px] mx-auto px-5 py-8 md:py-12">
       <div className="flex items-center justify-between mb-6">
@@ -321,7 +609,7 @@ function BookingFlow() {
       {services.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-2xl">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fa-solid fa-tools text-3xl text-gray-400"></i>
+            <FaTools className="text-3xl text-gray-400" />
           </div>
           <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">
             No Services Available
@@ -384,12 +672,6 @@ function BookingFlow() {
                             ))}
                           </div>
                         )}
-                      {service.duration && (
-                        <span>
-                          <i className="fa-solid fa-clock mr-2"></i>
-                          {service.duration}
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div className="text-right ml-4">
@@ -397,12 +679,6 @@ function BookingFlow() {
                       GH₵ {price}
                       {priceDisplay}
                     </p>
-                    {service.pricingModel === "individual" &&
-                      service.individualPrices && (
-                        <p className="text-xs text-gray-400">
-                          Multiple pricing options
-                        </p>
-                      )}
                   </div>
                 </div>
               </button>
@@ -427,13 +703,13 @@ function BookingFlow() {
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           }`}
         >
-          Next
+          Next <FaArrowRight className="inline ml-2" />
         </button>
       </div>
     </div>
   );
 
-  // Step 2: Pick Date & Time
+  // ✅ FIXED: renderStep2 now calls handleStep2Next
   const renderStep2 = () => (
     <div className="max-w-[800px] mx-auto px-5 py-8 md:py-12">
       <h2 className="text-2xl md:text-3xl font-bold text-[#1A1A1A] mb-2">
@@ -480,24 +756,32 @@ function BookingFlow() {
           onClick={() => setStep(1)}
           className="px-8 py-3 border border-gray-200 text-gray-700 font-bold rounded-lg hover:border-gray-300"
         >
-          Back
+          <FaArrowLeft className="inline mr-2" /> Back
         </button>
         <button
-          onClick={() => setStep(3)}
-          disabled={!selectedDate || !selectedTime}
-          className={`px-8 py-3 font-bold rounded-lg transition-colors ${
-            selectedDate && selectedTime
+          onClick={handleStep2Next}
+          disabled={!selectedDate || !selectedTime || isCheckingAvailability}
+          className={`px-8 py-3 font-bold rounded-lg transition-colors flex items-center gap-2 ${
+            selectedDate && selectedTime && !isCheckingAvailability
               ? "bg-[#0057FF] text-white hover:bg-blue-700"
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           }`}
         >
-          Next
+          {isCheckingAvailability ? (
+            <>
+              <FaSpinner className="animate-spin" />
+              Checking...
+            </>
+          ) : (
+            <>
+              Next <FaArrowRight className="inline ml-2" />
+            </>
+          )}
         </button>
       </div>
     </div>
   );
 
-  // Step 3: Enter Location
   const renderStep3 = () => (
     <div className="max-w-[800px] mx-auto px-5 py-8 md:py-12">
       <h2 className="text-2xl md:text-3xl font-bold text-[#1A1A1A] mb-2">
@@ -534,7 +818,6 @@ function BookingFlow() {
               className="w-full px-4 py-3 border border-[#E8F0FF] rounded-xl focus:outline-none focus:border-[#0057FF]"
             />
           </div>
-
           <div>
             <label className="block text-sm font-bold text-[#1A1A1A] mb-2">
               Landmark (Optional)
@@ -555,7 +838,7 @@ function BookingFlow() {
           onClick={() => setStep(2)}
           className="px-8 py-3 border border-gray-200 text-gray-700 font-bold rounded-lg hover:border-gray-300"
         >
-          Back
+          <FaArrowLeft className="inline mr-2" /> Back
         </button>
         <button
           onClick={() => setStep(4)}
@@ -566,7 +849,7 @@ function BookingFlow() {
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           }`}
         >
-          Next
+          Next <FaArrowRight className="inline ml-2" />
         </button>
       </div>
     </div>
@@ -574,97 +857,15 @@ function BookingFlow() {
 
   // Step 4: Confirm & Pay
   const renderStep4 = () => {
-    // Step 4: Confirm & Pay - Updated handleConfirmBooking
-    // src/pages/BookingFlow.jsx - Updated handleConfirmBooking
-
-    const handleConfirmBooking = async () => {
-      if (!selectedService) return toast.error("Please select a service");
-      if (!selectedDate) return toast.error("Please select a date");
-      if (!selectedTime) return toast.error("Please select a time");
-      if (!address || !city) return toast.error("Please provide your location");
-
-      setIsSubmitting(true);
-
-      try {
-        const bookingData = {
-          providerId: provider._id || provider.id,
-          providerName: provider?.name?.full || provider?.name || "Provider",
-          serviceId: selectedService._id || selectedService.id,
-          serviceName: selectedService.name,
-          servicePrice: totalPrice,
-          serviceCategory: selectedService.category,
-          serviceTypes: selectedService.serviceTypes || [],
-          date: selectedDate,
-          time: selectedTime,
-          address,
-          city,
-          landmark,
-          paymentMethod,
-          specialInstructions,
-          customerName: user?.name?.full || user?.email,
-          totalAmount: totalPrice,
-        };
-
-        console.log("📝 Sending Booking Data:", bookingData);
-        const response = await createBooking(bookingData);
-        console.log("✅ Received Booking response:", response);
-
-        if (response && response.success) {
-          toast.success("Booking confirmed successfully!");
-
-          // Turn off loading state BEFORE shifting screen contexts
-          setIsSubmitting(false);
-
-          return navigate(
-            `/booking-confirmation/${provider._id || provider.id}`,
-            {
-              state: {
-                booking: bookingData,
-                bookingId: response.data?._id || response.data?.id,
-              },
-            },
-          );
-        }
-
-        throw new Error(
-          response?.message || "Booking failed. Please try again.",
-        );
-      } catch (error) {
-        console.error("❌ Catch Block Triggered:", error);
-
-        // Explicitly shut down loading if an error occurs
-        setIsSubmitting(false);
-
-        // Extract status safely whether it is standard Axios or a custom wrapper
-        const statusCode = error.response?.status || error.status;
-        const backendMessage = error.response?.data?.message || error.message;
-
-        if (statusCode === 409) {
-          toast.error(
-            "The provider is already booked at this time. Please choose another time.",
-          );
-        } else if (statusCode === 401) {
-          toast.error("Please log in to book a service.");
-          navigate("/login");
-        } else if (statusCode === 404) {
-          toast.error("Provider or service not found.");
-        } else if (statusCode === 400) {
-          toast.error(
-            backendMessage || "Invalid booking data. Please check inputs.",
-          );
-        } else if (statusCode === 500) {
-          toast.error("Server error. Please try again later.");
-        } else {
-          toast.error(
-            backendMessage || "Failed to create booking. Please try again.",
-          );
-        }
-      }
-    };
-
     const price = selectedService?.basePrice || selectedService?.price || 0;
     const priceType = selectedService?.priceType || "fixed";
     const priceDisplay = priceType === "hourly" ? "/hr" : "";
+
+    const mobileNetworks = [
+      { id: "mtn", name: "MTN", icon: "📱" },
+      { id: "vodafone", name: "Vodafone", icon: "📱" },
+      { id: "airteltigo", name: "AirtelTigo", icon: "📱" },
+    ];
 
     return (
       <div className="max-w-[800px] mx-auto px-5 py-8 md:py-12">
@@ -675,8 +876,21 @@ function BookingFlow() {
           Review your booking details and select a payment method
         </p>
 
+        {/* Test Mode Banner */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+          <FaInfoCircle className="text-amber-600 text-xl mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-700">
+              Test Mode Active
+            </p>
+            <p className="text-xs text-amber-600">
+              Use test card: 4242 4242 4242 4242 | Exp: 12/25 | CVV: 123
+            </p>
+          </div>
+        </div>
+
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
-          <i className="fa-solid fa-user-check text-blue-600"></i>
+          <FaUser className="text-blue-600" />
           <div>
             <p className="text-sm text-blue-700">
               Booking as <strong>{user?.name?.full || user?.email}</strong>
@@ -713,7 +927,7 @@ function BookingFlow() {
           <div className="space-y-3 mb-6 pb-6 border-b border-[#E8F0FF]">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">
-                <i className="fa-solid fa-wrench mr-2"></i>
+                <FaWrench className="inline mr-2" />
                 Service
               </span>
               <span className="font-bold text-[#1A1A1A]">
@@ -722,21 +936,21 @@ function BookingFlow() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">
-                <i className="fa-solid fa-calendar mr-2"></i>
+                <FaCalendarAlt className="inline mr-2" />
                 Date
               </span>
               <span className="font-bold text-[#1A1A1A]">{selectedDate}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">
-                <i className="fa-solid fa-clock mr-2"></i>
+                <FaClock className="inline mr-2" />
                 Time
               </span>
               <span className="font-bold text-[#1A1A1A]">{selectedTime}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">
-                <i className="fa-solid fa-location-dot mr-2"></i>
+                <FaMapMarkerAlt className="inline mr-2" />
                 Location
               </span>
               <span className="font-bold text-[#1A1A1A]">{city}</span>
@@ -758,48 +972,114 @@ function BookingFlow() {
           </h3>
 
           <div className="space-y-3">
-            {[
-              {
-                id: "mobile-money",
-                name: "Mobile Money",
-                description: "MTN, Vodafone, AirtelTigo",
-                icon: "fa-mobile",
-              },
-              {
-                id: "debit-card",
-                name: "Debit Card",
-                description: "Visa, MasterCard",
-                icon: "fa-credit-card",
-              },
-              {
-                id: "cash",
-                name: "Cash on Delivery",
-                description: "Pay when service is complete",
-                icon: "fa-money-bill",
-              },
-            ].map((method) => (
+            {/* Mobile Money */}
+            <div
+              className={`w-full p-4 rounded-xl border-2 transition-all ${
+                paymentMethod === "mobile-money"
+                  ? "border-[#0057FF] bg-[#F5F8FF]"
+                  : "border-[#E8F0FF] hover:border-[#0057FF]"
+              }`}
+            >
               <button
-                key={method.id}
-                onClick={() => setPaymentMethod(method.id)}
-                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                  paymentMethod === method.id
-                    ? "border-[#0057FF] bg-[#F5F8FF]"
-                    : "border-[#E8F0FF] hover:border-[#0057FF]"
-                }`}
+                onClick={() => setPaymentMethod("mobile-money")}
+                className="w-full text-left"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-[#E8F0FF] rounded-lg flex items-center justify-center">
-                    <i className={`fa-solid ${method.icon} text-[#0057FF]`}></i>
+                    <FaMobile className="text-[#0057FF] text-xl" />
                   </div>
-                  <div>
-                    <p className="font-bold text-[#1A1A1A]">{method.name}</p>
+                  <div className="flex-1">
+                    <p className="font-bold text-[#1A1A1A]">Mobile Money</p>
                     <p className="text-sm text-gray-500">
-                      {method.description}
+                      MTN, Vodafone, AirtelTigo
                     </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PaystackIcon size={28} className="text-[#0057FF]" />
+                    <span className="text-xs text-gray-400">
+                      Secured by Paystack
+                    </span>
                   </div>
                 </div>
               </button>
-            ))}
+
+              {paymentMethod === "mobile-money" && (
+                <div className="mt-4 pt-4 border-t border-[#E8F0FF]">
+                  <p className="text-sm font-medium text-gray-700 mb-3">
+                    Select your network:
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {mobileNetworks.map((network) => (
+                      <button
+                        key={network.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMobileNetwork(network.id);
+                        }}
+                        className={`p-3 rounded-xl border-2 transition-all text-center ${
+                          selectedMobileNetwork === network.id
+                            ? "border-[#0057FF] bg-[#F5F8FF]"
+                            : "border-gray-200 hover:border-[#0057FF]"
+                        }`}
+                      >
+                        <div className="text-2xl">{network.icon}</div>
+                        <p className="text-xs font-medium mt-1">
+                          {network.name}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Debit Card */}
+            <button
+              onClick={() => setPaymentMethod("debit-card")}
+              className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                paymentMethod === "debit-card"
+                  ? "border-[#0057FF] bg-[#F5F8FF]"
+                  : "border-[#E8F0FF] hover:border-[#0057FF]"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#E8F0FF] rounded-lg flex items-center justify-center">
+                  <FaCreditCard className="text-[#0057FF] text-xl" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-[#1A1A1A]">Debit Card</p>
+                  <p className="text-sm text-gray-500">Visa, MasterCard</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <PaystackIcon size={28} className="text-[#0057FF]" />
+                  <span className="text-xs text-gray-400">
+                    Secured by Paystack
+                  </span>
+                </div>
+              </div>
+            </button>
+
+            {/* Cash on Delivery */}
+            <button
+              onClick={() => setPaymentMethod("cash")}
+              className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                paymentMethod === "cash"
+                  ? "border-[#0057FF] bg-[#F5F8FF]"
+                  : "border-[#E8F0FF] hover:border-[#0057FF]"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#E8F0FF] rounded-lg flex items-center justify-center">
+                  <FaMoneyBillWave className="text-[#0057FF] text-xl" />
+                </div>
+                <div>
+                  <p className="font-bold text-[#1A1A1A]">Cash on Delivery</p>
+                  <p className="text-sm text-gray-500">
+                    Pay when service is complete
+                  </p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -820,27 +1100,37 @@ function BookingFlow() {
             onClick={() => setStep(3)}
             className="px-8 py-3 border border-gray-200 text-gray-700 font-bold rounded-lg hover:border-gray-300"
           >
-            Back
+            <FaArrowLeft className="inline mr-2" /> Back
           </button>
           <button
-            onClick={handleConfirmBooking}
-            disabled={isSubmitting}
-            className={`px-8 py-3 font-bold rounded-lg transition-colors ${
-              isSubmitting
+            onClick={handlePayment}
+            disabled={isSubmitting || isProcessingPayment}
+            className={`px-8 py-3 font-bold rounded-lg transition-colors flex items-center gap-2 ${
+              isSubmitting || isProcessingPayment
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#FF6B00] text-white hover:bg-orange-600"
+                : paymentMethod === "cash"
+                  ? "bg-[#FF6B00] text-white hover:bg-orange-600"
+                  : "bg-[#0057FF] text-white hover:bg-blue-700"
             }`}
           >
-            {isSubmitting ? (
+            {isProcessingPayment ? (
               <>
-                <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                <FaSpinner className="animate-spin" />
                 Processing...
               </>
+            ) : isSubmitting ? (
+              <>
+                <FaSpinner className="animate-spin" />
+                Confirming...
+              </>
             ) : (
-              "Confirm & Pay"
+              <>{paymentMethod === "cash" ? "Confirm Booking" : "Pay Now"}</>
             )}
           </button>
         </div>
+
+        {/* ✅ Paystack Modal Container - This will host the inline modal */}
+        <div id="paystack-iframe-container" />
       </div>
     );
   };
@@ -849,15 +1139,16 @@ function BookingFlow() {
     <div className="bg-white min-h-screen">
       <Navbar />
 
-      <div className="pt-[72px] bg-[#F5F8FF]">
+      <div className="pt-[100px] pb-12 bg-[#F5F8FF]">
         <div className="max-w-[1280px] mx-auto px-5 py-8 md:py-12">
+          {/* Progress Steps */}
           <div className="flex items-center justify-between mb-8">
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
                     s <= step
-                      ? "bg-[#0057FF] text-white"
+                      ? "bg-[#0057FF] text-white shadow-lg shadow-blue-200"
                       : "bg-white border-2 border-[#E8F0FF] text-gray-400"
                   }`}
                 >
@@ -883,7 +1174,7 @@ function BookingFlow() {
           </div>
         </div>
 
-        <div className="bg-white">
+        <div className="bg-white rounded-t-3xl">
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
@@ -892,6 +1183,52 @@ function BookingFlow() {
       </div>
 
       <Footer />
+
+      {/* ✅ Enhanced Booking Error Modal with Blur & Animation */}
+      {showBookingError && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center md:items-center"
+          onClick={() => setShowBookingError(false)}
+        >
+          {/* Backdrop with blur */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-md animate-in fade-in duration-300"
+            onClick={() => setShowBookingError(false)}
+          ></div>
+
+          {/* Modal - Slides from bottom to middle */}
+          <div
+            className="relative w-full max-w-md bg-white rounded-t-3xl md:rounded-2xl p-6 mx-4 animate-in slide-in-from-bottom duration-300 md:slide-in-from-bottom-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowBookingError(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <FaTimesCircle className="text-2xl" />
+            </button>
+
+            {/* Icon */}
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaTimesCircle className="text-3xl text-red-500" />
+            </div>
+
+            <h2 className="text-xl font-bold text-center text-[#1A1A1A] mb-3">
+              Booking Unavailable
+            </h2>
+
+            <p className="text-gray-600 text-center mb-6">{modalMessage}</p>
+
+            <button
+              onClick={() => setShowBookingError(false)}
+              className="w-full bg-[#0057FF] text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+            >
+              OK, Got It
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

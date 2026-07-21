@@ -14,7 +14,7 @@ import ProviderOnboardingStep1Profile from "./Pages/ProviderOnboardingStep1Profi
 import ProviderOnboardingStep2Verification from "./Pages/ProviderOnboardingStep2Verification";
 import ProviderOnboardingStep3Review from "./Pages/ProviderOnboardingStep3Review";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import ProviderProfile from "./Pages/ProviderProfile";
+import ProviderProfile from "./Pages/Provider/ProviderProfile.jsx";
 import About from "./Pages/About";
 import Contact from "./Pages/Contact";
 import BookingConfirmation from "./Pages/BookingConfirmation";
@@ -31,11 +31,16 @@ import {
 } from "./redux/features/auth/authSlice.js";
 import LoginPage from "./Pages/adminPages/Login.jsx";
 import CustomerOnboarding from "./Pages/CustomerOnboardingGate.jsx";
-import ProviderDashboard from "./Pages/ProviderDashboard.jsx";
+import ProviderDashboard from "./Pages/Provider/ProviderDashboard.jsx";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.jsx";
 import SaturnContactMenu from "./components/SaturnContactMenu.jsx";
 import ChatWidget from "./components/chat/ChatWidget.jsx";
-import ManageProfile from "./Pages/ManageProfile.jsx";
+import ManageProfile from "./Pages/Provider/ManageProfile.jsx";
+import CustomerDashboard from "./Pages/Customer/CustomerDashboard.jsx";
+import BookingManagement from "./Pages/Provider/BookingManagement.jsx";
+import ChatWindow from "./Pages/ChatPages/ChatSupport.jsx";
+import CustomerBookingManagement from "./Pages/Customer/CustomerBookingManagement.jsx";
+import Settings from "./Pages/Settings.jsx";
 
 function App() {
   const [initializing, setInitializing] = useState(true);
@@ -171,8 +176,17 @@ function App() {
           path="/provider/onboarding"
           element={<ProviderOnboardingGate />}
         />
-        <Route path="/customer/onboarding" element={<CustomerOnboarding />} />
+        <Route
+          path="/provider/bookings/management"
+          element={<BookingManagement />}
+        />
 
+        <Route path="/customer/onboarding" element={<CustomerOnboarding />} />
+        <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+        <Route
+          path="/customer/bookings/management"
+          element={<CustomerBookingManagement />}
+        />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
 
@@ -181,6 +195,7 @@ function App() {
           path="/provider-onboarding/profile"
           element={<ProviderOnboardingStep1Profile />}
         />
+
         <Route
           path="/provider-onboarding/verification"
           element={<ProviderOnboardingStep2Verification />}
@@ -189,6 +204,8 @@ function App() {
           path="/booking-confirmation/:proverId"
           element={<BookingConfirmation />}
         />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/support" element={<ChatWindow />} />
         <Route
           path="/provider-dashbaord"
           element={

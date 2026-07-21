@@ -42,23 +42,29 @@ function Navbar() {
   const navigate = useNavigate();
 
   const isLoggedIn = isAuthenticated || !!user?.id || !!user?._id;
-  // 🚀 Check if user is a provider
-  const isProvider = user?.role === "provider" || user?.type === "provider";
 
-  // 🚀 THE FIX: Target user?.name?.full explicitly to match your DevTools database payload!
-  // 🚀 THE BULLETPROOF EXTRACTOR: Safely handles strings, arrays, or empty data structures without throwing errors
-  // 🚀 THE DEFENSIVE EXTRACTOR: Safely reads fields across flat or nested payloads
+  // 🚀 Check if user is a provider
+  const isProvider =
+    user?.role === "provider" ||
+    user?.type === "provider" ||
+    user?.roles?.includes("provider");
+  const isCustomer =
+    user?.role === "customer" ||
+    user?.type === "customer" ||
+    user?.roles?.includes("customer");
+
+  // 🚀 THE BULLETPROOF EXTRACTOR
   const userFirstName = (() => {
+    if (user?.name?.first && typeof user.name.first === "string")
+      return user.name.first;
     if (user?.first && typeof user.first === "string") return user.first;
     if (user?.firstName && typeof user.firstName === "string")
       return user.firstName;
-    if (user?.name?.first && typeof user.name.first === "string")
-      return user.name.first;
 
-    const targetFullName = user?.full || user?.fullName || user?.name?.full;
+    const targetFullName = user?.name?.full || user?.full || user?.fullName;
     if (targetFullName && typeof targetFullName === "string") {
       const parts = targetFullName.trim().split(" ");
-      if (parts.length > 0) return parts[0]; // Isolate index element string safely
+      if (parts.length > 0) return parts[0];
     }
 
     return "User";
@@ -78,7 +84,6 @@ function Navbar() {
     setLocationLoading(true);
 
     try {
-      // Get user's IP-based location using LocationIQ
       const response = await fetch(
         `https://api.locationiq.com/v1/ip?key=${LOCATIONIQ_API_KEY}&format=json`,
       );
@@ -87,7 +92,6 @@ function Navbar() {
 
       const data = await response.json();
 
-      // Extract city and region from response
       const location = {
         city: data.city || data.town || data.village || "Unknown City",
         state: data.state || data.region || "Unknown Region",
@@ -97,12 +101,10 @@ function Navbar() {
       setUserLocation(location);
       locationFetched.current = true;
 
-      // Store in localStorage for persistence
       localStorage.setItem("userLocation", JSON.stringify(location));
     } catch (error) {
       console.error("❌ Error fetching location:", error);
 
-      // Try to load from localStorage as fallback
       const savedLocation = localStorage.getItem("userLocation");
       if (savedLocation) {
         try {
@@ -126,11 +128,9 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
-      // 🔑 Fix: Try both common local storage token key names dynamically
       const token = localStorage.getItem("authToken");
 
       if (token) {
-        // 🚀 Dispatch the POST request with the correctly structured header layout
         await api.post(
           "/auth/logout",
           {},
@@ -142,22 +142,19 @@ function Navbar() {
         );
       }
     } catch (err) {
-      // Catch any backend 401/500 drops without locking up your user's viewport interface
       console.warn(
         "Backend session invalidation rejected or unreachable:",
         err.message,
       );
     } finally {
-      // 🧹 ALWAYS RUNS: This guarantees a clean client logout regardless of backend response codes
-
       localStorage.removeItem("authToken");
-      localStorage.removeItem("profile_draft_key"); // Wipes lingering wizard draft cache flags
-      localStorage.removeItem("userLocation"); // Clear location on logout
+      localStorage.removeItem("profile_draft_key");
+      localStorage.removeItem("userLocation");
 
-      dispatch(logoutUser()); // Triggers your Redux auth state reset
+      dispatch(logoutUser());
       setDropdownOpen(false);
       setMenuOpen(false);
-      navigate("/"); // Redirects the viewport immediately
+      navigate("/");
     }
   };
 
@@ -173,8 +170,33 @@ function Navbar() {
   // Handle search from the new component
   const handleSearch = (query, tags) => {
     console.log("Searching for:", query, "with tags:", tags);
-    // You can implement additional search logic here
-    // The navigation already happens in the SearchSection component
+  };
+
+  // 🚀 GET THE CORRECT DASHBOARD URL BASED ON USER ROLE
+  // Using the EXACT same URL pattern as your working Navbar
+  const getDashboardUrl = () => {
+    if (!isLoggedIn) return "/get-started";
+
+    // 🚀 MATCH YOUR EXISTING ROUTE PATTERN
+    if (isProvider) {
+      return "/provider-dashbaord"; // ✅ Keep the misspelled URL since it works!
+    }
+
+    // For customers, use customer dashboard route
+    if (isCustomer) {
+      return "/customer-dashboard";
+    }
+
+    // Fallback
+    return "/get-started";
+  };
+
+  // 🚀 GET DASHBOARD LABEL
+  const getDashboardLabel = () => {
+    if (!isLoggedIn) return "Get Started";
+    if (isProvider) return "Dashboard";
+    if (isCustomer) return "Dashboard";
+    return "Dashboard";
   };
 
   return (
@@ -194,7 +216,7 @@ function Navbar() {
           />
         </Link>
 
-        {/* Search bar — REDESIGNED with click trigger */}
+        {/* Search bar */}
         <div
           className="hidden md:flex items-center border rounded-full px-4 py-2 w-[400px] lg:w-[480px] transition-all bg-gray-50 border-gray-200 hover:border-[#0057FF] hover:bg-white cursor-pointer group search-trigger"
           onClick={() => setSearchOpen(true)}
@@ -227,7 +249,7 @@ function Navbar() {
             </Link>
           )}
 
-          {/* Language Dropdown - UNCHANGED */}
+          {/* Language Dropdown */}
           <div className="relative">
             <button
               onClick={() => setLangDropdownOpen(!langDropdownOpen)}
@@ -267,17 +289,18 @@ function Navbar() {
             )}
           </div>
 
+          {/* 🚀 FIXED: Dynamic Dashboard link based on user role */}
           {isLoggedIn ? (
             <Link
-              to="/provider-dashbaord"
-              className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
+              to={getDashboardUrl()}
+              className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center hover:bg-blue-700 transition-colors"
             >
-              Dashboard
+              {getDashboardLabel()}
             </Link>
           ) : (
             <Link
               to="/get-started"
-              className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
+              className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center hover:bg-blue-700 transition-colors"
             >
               Get Started
             </Link>
@@ -309,7 +332,7 @@ function Navbar() {
         className="w-full h-[2px]"
       />
 
-      {/* Mobile menu - UNCHANGED */}
+      {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-5 py-4 flex flex-col gap-4">
           {/* Mobile search trigger */}
@@ -356,10 +379,10 @@ function Navbar() {
             <>
               <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
                 <span className="text-sm font-semibold text-gray-800">
-                  Hi, {user?.fullName?.split(" ") || "User"}
+                  Hi, {user?.name?.full || user?.fullName || "User"}
                 </span>
                 <span className="text-xs font-medium text-gray-400 capitalize">
-                  Role: {user?.role || "Client"}
+                  Role: {user?.type || user?.role || "Customer"}
                 </span>
                 {isProvider && userLocation && (
                   <span className="text-xs text-gray-400">
@@ -372,6 +395,12 @@ function Navbar() {
               </Link>
               <Link to="/settings" className="text-sm text-gray-700">
                 Settings
+              </Link>
+              <Link
+                to={getDashboardUrl()}
+                className="bg-[#0057FF] text-white text-sm font-bold px-5 py-2.5 rounded-lg text-center"
+              >
+                {getDashboardLabel()}
               </Link>
               <button
                 onClick={handleLogout}

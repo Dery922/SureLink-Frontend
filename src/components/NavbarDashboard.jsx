@@ -10,6 +10,7 @@ import {
   FaBell,
   FaSignOutAlt,
   FaTachometerAlt,
+  FaCalendarAlt,
   FaBriefcase,
   FaWallet,
   FaChevronDown,
@@ -129,6 +130,11 @@ const NavbarDashbaord = () => {
       icon: FaUser, // Font Awesome user settings icon
     },
     { to: "/provider/earnings", label: "Earnings", icon: FaWallet },
+    {
+      to: "/provider/bookings/management", // Add this
+      label: "Bookings",
+      icon: FaCalendarAlt,
+    },
   ];
 
   const dropdownItems = [

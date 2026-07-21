@@ -3,12 +3,16 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
-function PartTimeTicker() {
+function PartTimeTicker({ onViewDetails, onApply, job }) {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const tickerRef = useRef(null);
   const animationRef = useRef(null);
+
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
 
   // Mock data with proper structure - all fields match what we use
   const mockOpportunities = [
@@ -252,13 +256,24 @@ function PartTimeTicker() {
                     </div>
                   </div>
 
-                  {/* Apply Button */}
-                  <button
-                    onClick={(e) => handleApply(id, e)}
-                    className="flex-shrink-0 px-4 py-1.5 bg-white text-[#0057FF] rounded-lg text-xs font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg"
-                  >
-                    Apply
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewDetails(opportunity);
+                      }}
+                      className="px-3 py-2 rounded-lg border border-[#dee2e9] text-blue hover:bg-[#0057FF] hover:text-white"
+                    >
+                      View
+                    </button>
+
+                    <button
+                      onClick={() => onApply(job)}
+                      className="px-3 py-2 rounded-lg bg-[#dee2e9] text-blue"
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
               </div>
             );

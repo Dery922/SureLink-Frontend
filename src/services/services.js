@@ -63,12 +63,6 @@ export const getProviderById = async (id) => {
   }
 };
 
-// src/services/booking.js or src/services/services.js
-
-// Create a new booking
-// src/services/services.js
-// src/services/services.js
-
 export const createBooking = async (bookingData) => {
   try {
     console.log("📤 API Request: POST /bookings", bookingData);
@@ -89,6 +83,18 @@ export const createBooking = async (bookingData) => {
     throw customError; // 🚀 This will now jump directly into your frontend's catch block!
   }
 };
+
+export const checkBookingAvailability = async (bookingData) => {
+  try {
+    const response = await api.post("/check-availability", bookingData);
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const userService = async () => {};
 
 // Get user's bookings
 export const getUserBookings = async () => {
@@ -122,6 +128,191 @@ export const cancelBooking = async (bookingId) => {
     throw error.response?.data || error;
   }
 };
+
+// src/services/bookingService.js or wherever your API calls are
+
+/**
+ * Accept a booking as a provider
+ * @param {string} bookingId - The ID of the booking to accept
+ * @returns {Promise} - API response
+ */
+export const acceptBooking = async (bookingId) => {
+  try {
+    // Validate bookingId
+    if (!bookingId) {
+      throw new Error("Booking ID is required");
+    }
+
+    console.log(`📝 Accepting booking: ${bookingId}`);
+
+    // Make the API call to accept the booking
+    const response = await api.put(`/bookings/${bookingId}/accept`, {
+      status: "accepted",
+      acceptedAt: new Date().toISOString(),
+    });
+
+    // Check if the response was successful
+    if (response.data && response.data.success) {
+      console.log(`✅ Booking ${bookingId} accepted successfully`);
+      return {
+        success: true,
+        data: response.data.data || response.data,
+        message: response.data.message || "Booking accepted successfully",
+      };
+    }
+
+    // If the response didn't have success flag but wasn't an error
+    if (response.data) {
+      return {
+        success: true,
+        data: response.data,
+        message: "Booking accepted successfully",
+      };
+    }
+
+    throw new Error("Unexpected response format from server");
+  } catch (error) {
+    console.error("❌ Error accepting booking:", error);
+
+    // Handle different error types
+    if (error.response) {
+      // Server responded with an error
+      const serverMessage =
+        error.response.data?.message || error.response.data?.error;
+
+      // Handle specific error cases
+      if (error.response.status === 404) {
+        throw new Error(
+          "Booking not found. It may have been cancelled or doesn't exist.",
+        );
+      }
+
+      if (error.response.status === 403) {
+        throw new Error("You don't have permission to accept this booking.");
+      }
+
+      if (error.response.status === 409) {
+        throw new Error(
+          "This booking has already been accepted by another provider.",
+        );
+      }
+
+      if (error.response.status === 400) {
+        throw new Error(
+          serverMessage || "Invalid booking data. Please try again.",
+        );
+      }
+
+      if (error.response.status === 401) {
+        throw new Error("Please log in to accept this booking.");
+      }
+
+      throw new Error(
+        serverMessage || "Failed to accept booking. Please try again.",
+      );
+    }
+
+    if (error.request) {
+      // Request was made but no response received
+      throw new Error(
+        "Network error. Please check your connection and try again.",
+      );
+    }
+
+    // Something else went wrong
+    throw new Error(
+      error.message || "An unexpected error occurred. Please try again.",
+    );
+  }
+};
+
+/**
+ * Alternative: Accept booking with additional data
+ * @param {string} bookingId - The ID of the booking to accept
+ * @param {Object} additionalData - Any additional data to send (e.g., notes, estimated time)
+ */
+export const acceptBookingWithData = async (bookingId, additionalData = {}) => {
+  try {
+    if (!bookingId) {
+      throw new Error("Booking ID is required");
+    }
+
+    console.log(`📝 Accepting booking ${bookingId} with data:`, additionalData);
+
+    const response = await api.put(`/bookings/${bookingId}/accept`, {
+      status: "accepted",
+      acceptedAt: new Date().toISOString(),
+      ...additionalData, // Merge additional data
+    });
+
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        data: response.data.data || response.data,
+        message: response.data.message || "Booking accepted successfully",
+      };
+    }
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Booking accepted successfully",
+    };
+  } catch (error) {
+    console.error("❌ Error accepting booking with data:", error);
+
+    if (error.response) {
+      throw new Error(
+        error.response.data?.message || "Failed to accept booking",
+      );
+    }
+    throw new Error(error.message || "Network error. Please try again.");
+  }
+};
+
+/**
+ * Bulk accept multiple bookings
+ * @param {Array<string>} bookingIds - Array of booking IDs to accept
+ */
+export const acceptMultipleBookings = async (bookingIds) => {
+  try {
+    if (!bookingIds || bookingIds.length === 0) {
+      throw new Error("No booking IDs provided");
+    }
+
+    console.log(`📝 Accepting ${bookingIds.length} bookings:`, bookingIds);
+
+    const response = await api.put("/bookings/accept-bulk", {
+      bookingIds,
+      status: "accepted",
+      acceptedAt: new Date().toISOString(),
+    });
+
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        data: response.data.data || response.data,
+        message:
+          response.data.message ||
+          `${bookingIds.length} booking(s) accepted successfully`,
+        acceptedCount: bookingIds.length,
+      };
+    }
+
+    throw new Error("Failed to accept multiple bookings");
+  } catch (error) {
+    console.error("❌ Error accepting multiple bookings:", error);
+
+    if (error.response) {
+      throw new Error(
+        error.response.data?.message || "Failed to accept bookings",
+      );
+    }
+    throw new Error(error.message || "Network error. Please try again.");
+  }
+};
+
+// Export the service with all functions
 
 // Update booking status (provider only)
 export const updateBookingStatus = async (bookingId, status) => {
@@ -190,7 +381,7 @@ export const getGalleryImagesByUserId = async (
     throw error;
   }
 };
-export const deleteGalleryImage = () => {};
+
 export const updateGalleryImage = () => {};
 
 // In your ManageProfile component, add this function
@@ -250,16 +441,6 @@ export const saveProviderServices = async (servicesData) => {
   }
 };
 
-// Original function
-// export const getProviderById = async (id) => {
-//   // Comment out the real API call and use mock instead
-//   // const response = await api.get(`/providers/${id}`);
-//   // return response.data;
-
-//   // Use mock data
-//   return mockApiCall(id);
-// };
-
 /**
  * Fetch gallery images with pagination
  * @param {number} page - Page number
@@ -280,40 +461,35 @@ export const saveProviderServices = async (servicesData) => {
  * @param {FormData} formData - Form data containing images
  * @returns {Promise} - Response with uploaded images
  */
-// export const uploadGalleryImages = async (formData) => {
-//   try {
-//     const response = await api.post("/gallery/upload", formData, {
-//       headers: {
-//         "Content-Type": "multipart/form-data",
-//       },
-//       onUploadProgress: (progressEvent) => {
-//         // This will be handled in the component
-//         const percentCompleted = Math.round(
-//           (progressEvent.loaded * 100) / progressEvent.total
-//         );
-//         // You can dispatch this to update progress
-//         return percentCompleted;
-//       },
-//     });
-//     return response.data;
-//   } catch (error) {
-//     throw error;
-//   }
-// };
 
+// In your service API file
+export const deleteServiceAPI = async (id) => {
+  if (!id) {
+    throw new Error("Service ID is required");
+  }
+
+  const token = localStorage.getItem("authToken");
+  // Make sure the URL is correct - just /provider/services/${id}
+  const response = await api.delete(`/provider/services/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
 /**
  * Delete a gallery image
  * @param {string} imageId - ID of the image to delete
  * @returns {Promise} - Response
  */
-// export const deleteGalleryImage = async (imageId) => {
-//   try {
-//     const response = await api.delete(`/gallery/${imageId}`);
-//     return response.data;
-//   } catch (error) {
-//     throw error;
-//   }
-// };
+export const deleteGalleryImage = async (imageId) => {
+  try {
+    const response = await api.delete(`/provider/gallery/${imageId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 /**
  * Update gallery image details (title, description, etc.)
@@ -355,5 +531,28 @@ export const setFeaturedImage = async (imageId) => {
     return response.data;
   } catch (error) {
     throw error;
+  }
+};
+
+/*All customers routes start here*/
+
+export const createCustomer = async (data) => {
+  try {
+    const response = await api.post("/auth/customer-onboarding", data);
+    return response.data;
+  } catch (error) {
+    // Better error handling with specific messages
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      const message = error.response.data?.message || "Server error occurred";
+      throw new Error(message);
+    } else if (error.request) {
+      // The request was made but no response was received
+      throw new Error("No response from server. Please check your connection.");
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      throw new Error(error.message || "Failed to create account");
+    }
   }
 };

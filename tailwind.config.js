@@ -21,11 +21,27 @@ module.exports = {
           900: "#001C50",
         },
       },
+      animation: {
+        "fade-in": "fadeIn 0.3s ease-out",
+        "slide-in-from-bottom": "slideInFromBottom 0.3s ease-out",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        slideInFromBottom: {
+          "0%": { transform: "translateY(100%)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+      },
     },
   },
   darkMode: "class",
   // theme: {
   //   extend: {},
   // },
-  plugins: [],
+  plugins: [
+    require("tailwindcss-animate"), // If using tailwindcss-animate plugin
+  ],
 };

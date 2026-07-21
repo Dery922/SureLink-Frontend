@@ -77,6 +77,7 @@ const authSlice = createSlice({
           role: incomingUser.role || incomingUser.type || "customer",
           type: incomingUser.type || incomingUser.role || "customer",
         };
+        localStorage.setItem("user", JSON.stringify(state.user));
       }
     },
     loginFailure: (state) => {
@@ -93,6 +94,27 @@ const authSlice = createSlice({
     },
     setInitializingFalse: (state) => {
       state.loading = false;
+    },
+    // ✅ NEW: setUser action for onboarding and manual user updates
+    setUser: (state, action) => {
+      const incomingUser = action.payload?.user
+        ? action.payload.user
+        : action.payload;
+
+      if (incomingUser && typeof incomingUser === "object") {
+        state.user = {
+          ...incomingUser,
+          id: incomingUser.id || incomingUser._id,
+          role: incomingUser.role || incomingUser.type || "customer",
+          type: incomingUser.type || incomingUser.role || "customer",
+        };
+        state.isAuthenticated = true;
+        state.loading = false;
+        state.error = null;
+        localStorage.setItem("user", JSON.stringify(state.user));
+      } else {
+        console.warn("setUser called with invalid user data:", incomingUser);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -148,6 +170,7 @@ export const {
   loginFailure,
   logoutUser,
   setInitializingFalse,
+  setUser, // ✅ EXPORT setUser action
 } = authSlice.actions;
 
 export default authSlice.reducer;
