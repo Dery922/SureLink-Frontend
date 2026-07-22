@@ -1,0 +1,708 @@
+/* ================================================================
+   SureLink Authentication Styles
+   Design System: §7 Design tokens (v1)
+   ================================================================ */
+
+/* CSS Variables - Design Tokens */
+:root {
+  /* Colors */
+  --sl-color-primary: #3a9aff;
+  --sl-color-primary-hover: #2b8deb;
+  --sl-color-primary-pressed: #1f7ad9;
+  --sl-color-primary-muted: #e8f4ff;
+  --sl-color-accent: #ff7a2e;
+  --sl-color-accent-hover: #e86820;
+  --sl-color-accent-muted: #fff4ed;
+  --sl-color-surface: #f8f9fa;
+  --sl-color-surface-elevated: #ffffff;
+  --sl-color-text-primary: #212529;
+  --sl-color-text-secondary: #6c757d;
+  --sl-color-border: #dee2e6;
+  --sl-color-success: #198754;
+  --sl-color-danger: #dc3545;
+  --sl-color-verify: #198754;
+  --sl-color-verify-pending: #ff7a2e;
+
+  /* Typography */
+  --sl-font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+    'Helvetica Neue', sans-serif;
+  --sl-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+    'Helvetica Neue', sans-serif;
+  --sl-font-size-display: 28px;
+  --sl-font-size-h1: 24px;
+  --sl-font-size-h2: 20px;
+  --sl-font-size-body: 16px;
+  --sl-font-size-small: 14px;
+  --sl-font-weight-regular: 400;
+  --sl-font-weight-semibold: 600;
+  --sl-font-weight-bold: 700;
+
+  /* Spacing */
+  --sl-space-xs: 4px;
+  --sl-space-sm: 8px;
+  --sl-space-md: 16px;
+  --sl-space-lg: 24px;
+
+  /* Radius */
+  --sl-radius-sm: 6px;
+  --sl-radius-md: 12px;
+  --sl-radius-full: 9999px;
+
+  /* Shadows */
+  --sl-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+  --sl-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --sl-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+/* ================================================================
+   Base Auth Container
+   ================================================================ */
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    var(--sl-color-primary-muted) 0%,
+    var(--sl-color-surface) 100%
+  );
+  padding: var(--sl-space-lg);
+  font-family: var(--sl-font-ui);
+}
+
+.auth-wrapper {
+  width: 100%;
+  max-width: 420px;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) ease-out;
+}
+
+/* ================================================================
+   Auth Header
+   ================================================================ */
+
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--sl-space-lg);
+  padding: var(--sl-space-lg) 0;
+}
+
+.auth-logo {
+  font-size: var(--sl-font-size-display);
+  font-weight: var(--sl-font-weight-bold);
+  color: var(--sl-color-text-primary);
+  letter-spacing: -0.5px;
+  margin-bottom: var(--sl-space-sm);
+}
+
+.auth-logo .logo-accent {
+  color: var(--sl-color-accent);
+}
+
+.auth-subtitle {
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-text-secondary);
+  margin: 0;
+  font-weight: var(--sl-font-weight-regular);
+}
+
+/* ================================================================
+   Form Container
+   ================================================================ */
+
+.auth-form-container {
+  background: var(--sl-color-surface-elevated);
+  border-radius: var(--sl-radius-md);
+  padding: var(--sl-space-lg);
+  box-shadow: var(--sl-shadow-md);
+  margin-bottom: var(--sl-space-md);
+}
+
+.auth-form {
+  width: 100%;
+}
+
+.form-title {
+  font-size: var(--sl-font-size-h1);
+  font-weight: var(--sl-font-weight-bold);
+  color: var(--sl-color-text-primary);
+  margin: 0 0 var(--sl-space-xs) 0;
+  text-align: center;
+}
+
+.form-subtitle {
+  font-size: var(--sl-font-size-body);
+  color: var(--sl-color-text-secondary);
+  margin: 0 0 var(--sl-space-lg) 0;
+  text-align: center;
+}
+
+/* ================================================================
+   Error Banner
+   ================================================================ */
+
+.form-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sl-space-sm);
+  background: rgba(220, 53, 69, 0.08);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  border-radius: var(--sl-radius-sm);
+  padding: var(--sl-space-md);
+  margin-bottom: var(--sl-space-md);
+  color: var(--sl-color-danger);
+  font-size: var(--sl-font-size-small);
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) ease-out;
+}
+
+.error-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+/* ================================================================
+   Form Fields
+   ================================================================ */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sl-space-md);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sl-space-sm);
+}
+
+.form-label {
+  font-size: var(--sl-font-size-body);
+  font-weight: var(--sl-font-weight-semibold);
+  color: var(--sl-color-text-primary);
+  display: block;
+}
+
+.form-label-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sl-space-sm);
+}
+
+.form-input {
+  min-height: 48px;
+  padding: 12px var(--sl-space-md);
+  font-size: var(--sl-font-size-body);
+  font-family: inherit;
+  border: 1px solid var(--sl-color-border);
+  border-radius: var(--sl-radius-sm);
+  background: var(--sl-color-surface-elevated);
+  color: var(--sl-color-text-primary);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-input::placeholder {
+  color: var(--sl-color-text-secondary);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--sl-color-primary);
+  box-shadow: 0 0 0 3px var(--sl-color-primary-muted);
+  background: var(--sl-color-surface-elevated);
+}
+
+.form-input:disabled {
+  background: var(--sl-color-surface);
+  color: var(--sl-color-text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ================================================================
+   Password Input Wrapper
+   ================================================================ */
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper .form-input {
+  flex: 1;
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--sl-space-md);
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: var(--sl-space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--sl-radius-sm);
+  transition: background-color 0.2s;
+}
+
+.password-toggle:hover:not(:disabled) {
+  background-color: var(--sl-color-surface);
+}
+
+.password-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sl-color-primary-muted);
+}
+
+.password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ================================================================
+   Field Hint
+   ================================================================ */
+
+.field-hint {
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-text-secondary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sl-space-xs);
+}
+
+.field-hint::before {
+  content: '💡';
+  font-size: 14px;
+}
+
+/* ================================================================
+   User Type Selector
+   ================================================================ */
+
+.user-type-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sl-space-md);
+}
+
+.user-type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sl-space-sm);
+  padding: var(--sl-space-md);
+  border: 2px solid var(--sl-color-border);
+  border-radius: var(--sl-radius-md);
+  background: var(--sl-color-surface);
+  color: var(--sl-color-text-primary);
+  font-size: var(--sl-font-size-body);
+  font-weight: var(--sl-font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100px;
+}
+
+.user-type-btn:hover:not(:disabled) {
+  border-color: var(--sl-color-primary);
+  box-shadow: var(--sl-shadow-sm);
+}
+
+.user-type-btn.active {
+  border-color: var(--sl-color-primary);
+  background: var(--sl-color-primary-muted);
+  color: var(--sl-color-primary);
+}
+
+.user-type-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.user-type-icon {
+  font-size: 28px;
+}
+
+/* ================================================================
+   Checkbox
+   ================================================================ */
+
+.form-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sl-space-sm);
+  margin-top: var(--sl-space-sm);
+}
+
+.form-checkbox input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  accent-color: var(--sl-color-primary);
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.form-checkbox label {
+  font-size: var(--sl-font-size-body);
+  color: var(--sl-color-text-primary);
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--sl-color-primary);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: var(--sl-font-weight-semibold);
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  transition: color 0.2s;
+}
+
+.link-btn:hover {
+  color: var(--sl-color-primary-hover);
+  text-decoration: underline;
+}
+
+.link-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================================================================
+   Buttons
+   ================================================================ */
+
+.form-submit-btn {
+  min-height: 48px;
+  padding: 12px var(--sl-space-md);
+  font-size: var(--sl-font-size-body);
+  font-weight: var(--sl-font-weight-semibold);
+  background: linear-gradient(135deg, var(--sl-color-primary), var(--sl-color-primary-hover));
+  color: white;
+  border: none;
+  border-radius: var(--sl-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sl-space-sm);
+  font-family: inherit;
+}
+
+.form-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    var(--sl-color-primary-hover),
+    var(--sl-color-primary-pressed)
+  );
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(58, 154, 255, 0.3);
+}
+
+.form-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.form-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.form-secondary-btn {
+  min-height: 48px;
+  padding: 12px var(--sl-space-md);
+  font-size: var(--sl-font-size-body);
+  font-weight: var(--sl-font-weight-semibold);
+  background: transparent;
+  color: var(--sl-color-text-primary);
+  border: 1px solid var(--sl-color-border);
+  border-radius: var(--sl-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sl-space-md);
+  font-family: inherit;
+}
+
+.form-secondary-btn:hover:not(:disabled) {
+  background: var(--sl-color-surface);
+  border-color: var(--sl-color-primary);
+  color: var(--sl-color-primary);
+}
+
+.form-secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================================================================
+   Form Divider
+   ================================================================ */
+
+.form-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--sl-space-md);
+  margin: var(--sl-space-lg) 0;
+  color: var(--sl-color-text-secondary);
+  font-size: var(--sl-font-size-small);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-divider::before,
+.form-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--sl-color-border);
+}
+
+/* ================================================================
+   Toggle Section
+   ================================================================ */
+
+.auth-toggle {
+  text-align: center;
+  padding-top: var(--sl-space-md);
+  border-top: 1px solid var(--sl-color-border);
+}
+
+.auth-toggle p {
+  font-size: var(--sl-font-size-body);
+  color: var(--sl-color-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--sl-space-sm);
+}
+
+.auth-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--sl-color-primary);
+  font-weight: var(--sl-font-weight-semibold);
+  cursor: pointer;
+  font-size: var(--sl-font-size-body);
+  padding: 0;
+  font-family: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.auth-toggle-btn:hover {
+  color: var(--sl-color-primary-hover);
+  text-decoration: underline;
+}
+
+/* ================================================================
+   Trust Section
+   ================================================================ */
+
+.auth-trust {
+  display: flex;
+  justify-content: center;
+  gap: var(--sl-space-lg);
+  padding: var(--sl-space-lg) var(--sl-space-md);
+  background: var(--sl-color-surface-elevated);
+  border-radius: var(--sl-radius-md);
+  margin-bottom: var(--sl-space-md);
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sl-space-sm);
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-text-secondary);
+}
+
+.trust-icon {
+  font-size: 18px;
+  color: var(--sl-color-verify);
+}
+
+/* ================================================================
+   Loading Spinner
+   ================================================================ */
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ================================================================
+   Forgot Password Button
+   ================================================================ */
+
+.forgot-password-btn {
+  background: none;
+  border: none;
+  color: var(--sl-color-primary);
+  font-size: var(--sl-font-size-small);
+  font-weight: var(--sl-font-weight-semibold);
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgot-password-btn:hover {
+  color: var(--sl-color-primary-hover);
+  text-decoration: underline;
+}
+
+/* ================================================================
+   Animations
+   ================================================================ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ================================================================
+   Responsive Design
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .auth-container {
+    padding: var(--sl-space-md);
+  }
+
+  .auth-wrapper {
+    max-width: 100%;
+  }
+
+  .auth-logo {
+    font-size: 24px;
+  }
+
+  .auth-trust {
+    flex-direction: column;
+    gap: var(--sl-space-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-form-container {
+    padding: var(--sl-space-md);
+  }
+
+  .form-title {
+    font-size: var(--sl-font-size-h2);
+  }
+
+  .user-type-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .form-submit-btn,
+  .form-secondary-btn {
+    min-height: 44px;
+    font-size: var(--sl-font-size-small);
+  }
+}
+
+/* ================================================================
+   Accessibility Enhancements
+   ================================================================ */
+
+/* Focus visible for keyboard navigation */
+.form-submit-btn:focus-visible,
+.form-secondary-btn:focus-visible,
+.form-input:focus-visible {
+  outline: 2px solid var(--sl-color-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  .form-input {
+    border-width: 2px;
+  }
+
+  .form-submit-btn {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Dark mode stub (Phase 1+) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sl-color-surface: #1a1a1a;
+    --sl-color-surface-elevated: #2d2d2d;
+    --sl-color-text-primary: #ffffff;
+    --sl-color-text-secondary: #aaaaaa;
+    --sl-color-border: #404040;
+  }
+
+  .auth-container {
+    background: linear-gradient(
+      135deg,
+      rgba(58, 154, 255, 0.1),
+      var(--sl-color-surface)
+    );
+  }
+}
