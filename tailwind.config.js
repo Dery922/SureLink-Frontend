@@ -6,7 +6,6 @@ module.exports = {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
       },
-
       colors: {
         brand: {
           50: "#EFF6FF",
@@ -14,7 +13,7 @@ module.exports = {
           200: "#BFDBFE",
           300: "#93C5FD",
           400: "#60A5FA",
-          500: "#0057FF", // Your main blue
+          500: "#0057FF",
           600: "#0047D4",
           700: "#0039A8",
           800: "#002A7C",
@@ -38,10 +37,7 @@ module.exports = {
     },
   },
   darkMode: "class",
-  // theme: {
-  //   extend: {},
-  // },
   plugins: [
-    require("tailwindcss-animate"), // If using tailwindcss-animate plugin
+    require("tailwindcss-animate"),
   ],
 };
