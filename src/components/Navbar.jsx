@@ -81,6 +81,15 @@ function Navbar() {
   const fetchUserLocation = async () => {
     if (locationFetched.current) return;
 
+    // Skip if no real API key is configured
+    if (!LOCATIONIQ_API_KEY || LOCATIONIQ_API_KEY === "your_api_key_here") {
+      const savedLocation = localStorage.getItem("userLocation");
+      if (savedLocation) {
+        try { setUserLocation(JSON.parse(savedLocation)); locationFetched.current = true; } catch {}
+      }
+      return;
+    }
+
     setLocationLoading(true);
 
     try {

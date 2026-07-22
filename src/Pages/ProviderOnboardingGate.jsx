@@ -71,6 +71,7 @@ const INITIAL_FORM = {
   docSize: "",
   consent: false,
   avatarUrl: "",
+  selfieUrl: "",
   businessName: "",
   coverPicture: "",
 };
@@ -158,6 +159,7 @@ export default function ProviderOnboarding() {
   const docInputRef = useRef(null);
   const autoSaveTimerRef = useRef(null);
   const coverInputRef = useRef(null);
+  const selfieInputRef = useRef(null);
 
   // ===================== EFFECTS =====================
   useEffect(() => {
@@ -235,7 +237,8 @@ export default function ProviderOnboarding() {
     if (form.idType && form.idNumber.trim().length >= 6) score += 20;
     if (form.docName) score += 5;
     if (form.avatarUrl) score += 5;
-    if (form.coverPicture) score += 10;
+    if (form.selfieUrl) score += 5;
+    if (form.coverPicture) score += 5;
     if (form.basePrice) score += 5;
     return Math.min(score, 100);
   }, [form]);
@@ -248,6 +251,7 @@ export default function ProviderOnboarding() {
       bio: form.bio.trim().length >= 40,
       verification: !!(form.idType && form.idNumber.trim().length >= 6),
       photo: !!form.avatarUrl,
+      selfie: !!form.selfieUrl,
     }),
     [form],
   );
@@ -491,6 +495,25 @@ export default function ProviderOnboarding() {
       }
       const reader = new FileReader();
       reader.onload = (ev) => updateField("avatarUrl", ev.target.result);
+      reader.readAsDataURL(file);
+    },
+    [addToast, updateField],
+  );
+
+  const handleSelfieChange = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        addToast("Invalid file", "Please upload an image file.", "error");
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        addToast("File too large", "Maximum image size is 2MB.", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => updateField("selfieUrl", ev.target.result);
       reader.readAsDataURL(file);
     },
     [addToast, updateField],
@@ -1385,6 +1408,71 @@ export default function ProviderOnboarding() {
                         />
                       </div>
                     </div>
+
+                    {/* Verification Selfie */}
+                    <div className="mt-6">
+                      <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                        Verification Selfie{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <p className="text-xs text-gray-500 mb-3">
+                        A clear photo of your face for identity verification.
+                      </p>
+                      <div className="flex items-center gap-5">
+                        <div
+                          className="avatar-wrap relative w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden cursor-pointer"
+                          onClick={() => selfieInputRef.current?.click()}
+                        >
+                          {!form.selfieUrl ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <FaCamera className="text-gray-400 text-xl" />
+                              <span className="text-[10px] text-gray-400">
+                                Selfie
+                              </span>
+                            </div>
+                          ) : (
+                            <img
+                              src={form.selfieUrl}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              alt="Verification selfie"
+                            />
+                          )}
+                          <div className="avatar-overlay absolute inset-0 bg-black/40 flex items-center justify-center rounded-full">
+                            <FaCamera className="text-white text-xl" />
+                          </div>
+                          <input
+                            type="file"
+                            ref={selfieInputRef}
+                            accept="image/*"
+                            capture="user"
+                            className="hidden"
+                            onChange={handleSelfieChange}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-[#1A1A1A]">
+                            Take or upload a selfie
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Must clearly show your face. Max 2MB.
+                          </p>
+                          {form.selfieUrl && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateField("selfieUrl", "");
+                                if (selfieInputRef.current)
+                                  selfieInputRef.current.value = "";
+                              }}
+                              className="mt-1.5 text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                            >
+                              <FaTimes className="text-[10px]" />
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </section>
                 )}
 
@@ -1577,6 +1665,7 @@ export default function ProviderOnboarding() {
                         label: "Complete ID verification",
                       },
                       { key: "photo", label: "Add profile photo" },
+                      { key: "selfie", label: "Take verification selfie" },
                     ].map(({ key, label }) => (
                       <div
                         key={key}

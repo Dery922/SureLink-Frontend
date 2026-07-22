@@ -161,11 +161,12 @@ function App() {
         <Route path="/register" element={<Auth />} />
         <Route path="/signin" element={<Auth />} />
         <Route path="/get-started" element={<Auth />} />
-        <Route path="/provider/:id" element={<ProviderProfile />} />
         <Route
           path="/provider/manage/profile-page"
           element={<ManageProfile />}
         />
+        <Route path="/provider/earnings" element={<ProviderDashboard />} />
+        <Route path="/provider/:id" element={<ProviderProfile />} />
         <Route
           path="/become-provider"
           element={<Navigate to="/provider-onboarding/profile" replace />}
